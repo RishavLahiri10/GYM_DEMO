@@ -6,13 +6,46 @@ import {
   X, 
   Phone, 
   ChevronRight, 
-  LayoutDashboard
+  LayoutDashboard,
+  User,
+  LogIn,
+  Sun,
+  Moon
 } from 'lucide-react';
+import { getStoredTheme, saveTheme } from '../utils/themeManager';
 
-export default function Navbar({ onOpenBooking, onOpenAdmin, isAdminOpen }) {
+export default function Navbar({ onOpenBooking, onOpenAdmin, isAdminOpen, onOpenAuth, authUser }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof document !== 'undefined') {
+      return document.documentElement.getAttribute('data-theme') !== 'light';
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    const handleThemeSync = (e) => {
+      const current = e?.detail || getStoredTheme();
+      setIsDarkMode(current.mode !== 'light');
+    };
+    handleThemeSync();
+    window.addEventListener('kinetix-theme-changed', handleThemeSync);
+    window.addEventListener('storage', handleThemeSync);
+    return () => {
+      window.removeEventListener('kinetix-theme-changed', handleThemeSync);
+      window.removeEventListener('storage', handleThemeSync);
+    };
+  }, []);
+
+  const handleToggleTheme = () => {
+    const current = getStoredTheme();
+    const nextMode = current.mode === 'light' ? 'dark' : 'light';
+    const updated = { ...current, mode: nextMode };
+    saveTheme(updated);
+    setIsDarkMode(nextMode === 'dark');
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,6 +70,24 @@ export default function Navbar({ onOpenBooking, onOpenAdmin, isAdminOpen }) {
     { name: 'Gallery', href: '#gallery' },
     { name: 'Contact', href: '#contact' }
   ];
+
+  // Get safe label for auth button (never exposes 'admin' on public navbar)
+  const getAuthButtonLabel = () => {
+    if (!authUser) return 'Login';
+    const emailLower = (authUser.email || '').toLowerCase();
+    if (
+      authUser.role === 'admin' ||
+      authUser.user_metadata?.role === 'admin' ||
+      emailLower.startsWith('admin')
+    ) {
+      return 'Account';
+    }
+    if (authUser.user_metadata?.full_name) {
+      return authUser.user_metadata.full_name.split(' ')[0];
+    }
+    const username = authUser.email ? authUser.email.split('@')[0] : 'Account';
+    return username.toLowerCase() === 'admin' ? 'Account' : username;
+  };
 
   const handleNavClick = (e, href) => {
     e.preventDefault();
@@ -116,15 +167,31 @@ export default function Navbar({ onOpenBooking, onOpenAdmin, isAdminOpen }) {
 
             {/* Desktop Right CTA Block */}
             <div className="nav-cta-group">
-              {/* Admin Portal Toggle */}
-              <button 
-                onClick={onOpenAdmin}
-                className={`admin-toggle-btn ${isAdminOpen ? 'admin-active' : ''}`}
-                title="Open Gym Admin / Management Portal"
-                id="navbar-admin-btn"
+              {/* User Personal Theme Switcher (Light / Dark) */}
+              <button
+                type="button"
+                onClick={handleToggleTheme}
+                className="admin-toggle-btn theme-mode-nav-btn"
+                title={isDarkMode ? "Switch to Light Theme" : "Switch to Dark Theme"}
+                aria-label="Toggle Theme Mode"
+                id="navbar-theme-toggle-btn"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                <LayoutDashboard size={14} />
-                <span>Admin</span>
+                {isDarkMode ? <Sun size={15} color="var(--accent, #ccff00)" /> : <Moon size={15} />}
+                <span style={{ fontSize: '0.78rem' }}>{isDarkMode ? 'Light' : 'Dark'}</span>
+              </button>
+
+              {/* Member / Account Login Button (Admin button is strictly removed from public navbar) */}
+              <button
+                type="button"
+                onClick={() => onOpenAuth && onOpenAuth('login')}
+                className="admin-toggle-btn"
+                title="Member Login & Account"
+                id="navbar-auth-btn"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <User size={14} />
+                <span>{getAuthButtonLabel()}</span>
               </button>
 
               {/* Direct Phone link */}
@@ -209,15 +276,26 @@ export default function Navbar({ onOpenBooking, onOpenAdmin, isAdminOpen }) {
             BOOK FREE TRIAL
           </button>
 
+          {/* Mobile Theme Switcher */}
+          <button
+            onClick={handleToggleTheme}
+            className="btn btn-secondary w-full"
+            style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            id="mobile-drawer-theme-toggle-btn"
+          >
+            {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
+            <span>Switch to {isDarkMode ? 'Light Theme' : 'Dark Theme'}</span>
+          </button>
+
           <button
             onClick={() => {
               setIsMobileMenuOpen(false);
-              onOpenAdmin();
+              if (onOpenAuth) onOpenAuth('login');
             }}
             className="btn btn-secondary w-full"
             style={{ marginTop: '10px' }}
           >
-            <LayoutDashboard size={15} /> Manager Portal
+            <User size={15} /> {getAuthButtonLabel() === 'Login' ? 'Member Login' : `Account (${getAuthButtonLabel()})`}
           </button>
 
           <div className="mobile-quick-contacts">

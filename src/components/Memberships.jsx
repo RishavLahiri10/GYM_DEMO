@@ -1,9 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MEMBERSHIP_PLANS } from '../data/gymData';
-import { Check, X, Shield, ArrowRight } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
+import { Check, X, Shield, ArrowRight, Database } from 'lucide-react';
 
 export default function Memberships({ onOpenBooking }) {
+  const [plans, setPlans] = useState(MEMBERSHIP_PLANS);
+  const [isLiveFromDb, setIsLiveFromDb] = useState(false);
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'quarterly' | 'annual'
+
+  // 2. Load dynamic membership plans from Supabase
+  useEffect(() => {
+    async function loadPlans() {
+      try {
+        const { data, error } = await supabase
+          .from('membership_plans')
+          .select('*');
+
+        if (!error && data && data.length > 0) {
+          const formatted = data.map((p) => {
+            const basePrice = Number(p.price) || 1499;
+            return {
+              id: p.id,
+              name: p.name,
+              popular: Boolean(p.is_popular),
+              priceMonthly: basePrice,
+              priceQuarterly: Math.round(basePrice * 3 * 0.85),
+              priceAnnual: Math.round(basePrice * 12 * 0.70),
+              periodText: p.duration || 'MONTH',
+              description: p.description || 'Full access to equipment and amenities.',
+              ctaText: 'CHOOSE PLAN',
+              features: Array.isArray(p.features) ? p.features : [
+                { text: "Full gym floor access (5:30 AM – 10:30 PM)", included: true },
+                { text: "Olympic lifting & cardio zones", included: true },
+                { text: "Luxury locker & shower facility", included: true }
+              ]
+            };
+          });
+          setPlans(formatted);
+          setIsLiveFromDb(true);
+        }
+      } catch (err) {
+        console.info('Supabase membership_plans query handled:', err);
+      }
+    }
+    loadPlans();
+  }, []);
 
   const getPrice = (plan) => {
     if (billingCycle === 'quarterly') {
@@ -30,9 +71,27 @@ export default function Memberships({ onOpenBooking }) {
       <div className="container">
         {/* Section Header */}
         <div className="section-header-center">
-          <span className="section-tag">
-            TRANSPARENT VALUE
-          </span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <span className="section-tag">
+              TRANSPARENT VALUE
+            </span>
+            {isLiveFromDb && (
+              <span style={{ 
+                background: 'rgba(16, 185, 129, 0.15)', 
+                color: '#34d399', 
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                padding: '2px 8px',
+                borderRadius: '999px',
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <Database size={10} /> Dynamic Database Pricing
+              </span>
+            )}
+          </div>
           <h2 className="section-title">
             CHOOSE YOUR <span className="text-volt-accent">MEMBERSHIP.</span>
           </h2>
@@ -70,7 +129,7 @@ export default function Memberships({ onOpenBooking }) {
 
         {/* Pricing Cards Grid */}
         <div className="memberships-grid">
-          {MEMBERSHIP_PLANS.map((plan) => {
+          {plans.map((plan) => {
             const price = getPrice(plan);
             const isPopular = plan.popular;
 
@@ -106,7 +165,7 @@ export default function Memberships({ onOpenBooking }) {
                     className={`btn w-full ${isPopular ? 'btn-primary' : 'btn-secondary'}`}
                     id={`membership-btn-${plan.id}`}
                   >
-                    <span>{plan.ctaText}</span>
+                    <span>BOOK FREE TRIAL / ENQUIRE</span>
                     <ArrowRight size={15} />
                   </button>
                 </div>
@@ -115,17 +174,21 @@ export default function Memberships({ onOpenBooking }) {
                 <div className="plan-features-block">
                   <span className="features-list-title">Included:</span>
                   <ul className="features-checklist">
-                    {plan.features.map((feat, fIdx) => (
-                      <li 
-                        key={fIdx} 
-                        className={`feature-item ${feat.included ? 'included' : 'not-included'}`}
-                      >
-                        <span className="feat-check">
-                          {feat.included ? <Check size={14} className="text-volt" /> : <X size={14} className="text-muted" />}
-                        </span>
-                        <span className="feature-text">{feat.text}</span>
-                      </li>
-                    ))}
+                    {plan.features.map((feat, fIdx) => {
+                      const isIncluded = typeof feat === 'string' ? true : feat.included;
+                      const text = typeof feat === 'string' ? feat : feat.text;
+                      return (
+                        <li 
+                          key={fIdx} 
+                          className={`feature-item ${isIncluded ? 'included' : 'not-included'}`}
+                        >
+                          <span className="feat-check">
+                            {isIncluded ? <Check size={14} className="text-volt" /> : <X size={14} className="text-muted" />}
+                          </span>
+                          <span className="feature-text">{text}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
 

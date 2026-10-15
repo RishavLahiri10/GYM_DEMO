@@ -10,6 +10,9 @@
   --accent: #CCFF00; /* Athletic Performance Lime */
   --accent-hover: #D8FF24;
   --accent-dim: rgba(204, 255, 0, 0.08);
+  --accent-rgb: 204, 255, 0;
+  --accent-text: #08090D;
+  --accent-glow: rgba(204, 255, 0, 0.35);
   --accent-orange: #FF5E36;
 
   --text-primary: #F8FAFC;
@@ -26,20 +29,72 @@
   --font-heading: 'Outfit', sans-serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
 
-  /* Sharp, intentional, non-AI corners */
+  /* Intentional corners controllable via Admin Theme Adjuster */
   --radius-xs: 2px;
   --radius-sm: 3px;
   --radius-md: 4px;
   --radius-lg: 6px;
+  --radius-btn: 2px;
   --radius-full: 9999px;
 
-  /* Restrained, realistic shadows - NO glowing neon blobs */
+  /* Restrained, realistic shadows */
   --shadow-subtle: 0 4px 16px rgba(0, 0, 0, 0.3);
   --shadow-elevated: 0 12px 36px rgba(0, 0, 0, 0.5);
+
+  --section-py: 100px;
+  --card-padding: 26px;
 
   --transition-fast: 0.15s ease;
   --transition-base: 0.25s ease;
   --transition-smooth: 0.35s ease;
+}
+
+/* Light Mode Overrides (Admin Controlled for All Visitors) */
+[data-theme="light"] {
+  --bg-dark: #F5F7FA;
+  --bg-surface: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F1F5F9;
+  --bg-subtle: #E2E8F0;
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-inverse: #FFFFFF;
+
+  --border-light: rgba(0, 0, 0, 0.08);
+  --border-medium: rgba(0, 0, 0, 0.14);
+  --border-dark: rgba(0, 0, 0, 0.04);
+  --border-accent: rgba(var(--accent-rgb, 204, 255, 0), 0.4);
+
+  --shadow-subtle: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-elevated: 0 12px 36px rgba(0, 0, 0, 0.1);
+}
+
+/* Theme Option: Disabled Smooth Transitions */
+html.no-smooth-transitions,
+html.no-smooth-transitions * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Theme Option: High-Contrast Bold Focus Rings */
+html.bold-focus-rings :focus-visible {
+  outline: 3px solid var(--accent) !important;
+  outline-offset: 3px !important;
+}
+
+/* Theme Option: Subtle Athletic Blueprint Grid Lines */
+html.theme-grid-lines body {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+[data-theme="light"].theme-grid-lines body {
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
 }
 
 *, *::before, *::after {
@@ -214,7 +269,7 @@ img {
   font-size: 0.92rem;
   letter-spacing: 0.04em;
   padding: 14px 28px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-btn, var(--radius-xs));
   transition: all var(--transition-fast);
   text-align: center;
   cursor: pointer;
@@ -222,7 +277,7 @@ img {
 
 .btn-primary {
   background-color: var(--accent);
-  color: #08090D;
+  color: var(--accent-text, #08090D);
   border: 1px solid var(--accent);
 }
 .btn-primary:hover {

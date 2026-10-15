@@ -31,7 +31,64 @@
     <!-- Preconnect Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Zero-Flicker Admin Theme Initialization Script -->
+    <script>
+      (function() {
+        try {
+          var raw = localStorage.getItem('kinetix_public_theme');
+          if (raw) {
+            var t = JSON.parse(raw);
+            var root = document.documentElement;
+            var effMode = t.mode || 'dark';
+            if (effMode === 'auto') {
+              effMode = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+            }
+            root.setAttribute('data-theme', effMode);
+
+            if (t.accentColor) {
+              root.style.setProperty('--accent', t.accentColor);
+              if (t.accentHover) root.style.setProperty('--accent-hover', t.accentHover);
+              if (t.accentText) root.style.setProperty('--accent-text', t.accentText);
+              if (t.accentRgb) {
+                root.style.setProperty('--accent-rgb', t.accentRgb);
+                root.style.setProperty('--accent-dim', 'rgba(' + t.accentRgb + ', 0.12)');
+                root.style.setProperty('--accent-glow', 'rgba(' + t.accentRgb + ', 0.35)');
+                root.style.setProperty('--border-accent', 'rgba(' + t.accentRgb + ', 0.35)');
+              }
+            }
+
+            if (t.radius !== undefined) {
+              var r = Number(t.radius) || 4;
+              root.style.setProperty('--radius-xs', Math.max(2, Math.round(r * 0.35)) + 'px');
+              root.style.setProperty('--radius-sm', Math.max(3, Math.round(r * 0.65)) + 'px');
+              root.style.setProperty('--radius-md', r + 'px');
+              root.style.setProperty('--radius-lg', Math.round(r * 1.5) + 'px');
+              root.style.setProperty('--radius-btn', r + 'px');
+            }
+
+            if (t.fontHeading) root.style.setProperty('--font-heading', t.fontHeading);
+            if (t.fontDisplay) root.style.setProperty('--font-display', t.fontDisplay);
+            if (t.fontBody) root.style.setProperty('--font-body', t.fontBody);
+
+            if (t.density === 'tight') {
+              root.style.setProperty('--section-py', '72px');
+              root.style.setProperty('--card-padding', '18px');
+            } else if (t.density === 'relaxed') {
+              root.style.setProperty('--section-py', '120px');
+              root.style.setProperty('--card-padding', '34px');
+            }
+
+            if (t.smoothAnimations === false) root.classList.add('no-smooth-transitions');
+            if (t.boldFocusRings) root.classList.add('bold-focus-rings');
+            if (t.showGridLines) root.classList.add('theme-grid-lines');
+          }
+        } catch (e) {
+          console.error('Theme init error:', e);
+        }
+      })();
+    </script>
 
     <!-- Structured Data (JSON-LD) for Local Gym / Fitness Center -->
     <script type="application/ld+json">

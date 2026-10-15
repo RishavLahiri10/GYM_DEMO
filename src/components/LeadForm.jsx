@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
 import { GYM_CONFIG } from '../data/gymData';
-import { CheckCircle2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { CheckCircle2, AlertCircle, Loader2, ArrowRight, Calendar, Clock, Sparkles } from 'lucide-react';
 
 export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
+  // Default date to tomorrow
+  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const todayStr = new Date().toISOString().split('T')[0];
+
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
     email: '',
     fitnessGoal: 'Weight Loss',
+    preferredDate: tomorrowStr,
     preferredTime: 'Morning (6:00 AM – 9:00 AM)',
     message: initialSubject ? `Inquiry regarding: ${initialSubject}` : ''
   });
 
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -61,9 +68,12 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
+    if (submitError) {
+      setSubmitError('');
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -72,17 +82,38 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
     }
 
     setIsSubmitting(true);
+    setSubmitError('');
 
-    setTimeout(() => {
+    try {
+      // 1. Send free-trial enquiry to Supabase
+      const enquiryPayload = {
+        name: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        preferred_date: formData.preferredDate || tomorrowStr,
+        preferred_time: formData.preferredTime,
+        goal: formData.fitnessGoal,
+        message: formData.message.trim() || `Requested ${initialSubject || 'VIP Free Trial Pass'}`,
+        type: initialSubject && !initialSubject.includes('Trial') ? 'General Enquiry' : 'Free Trial',
+        status: 'New'
+      };
+
+      const { data, error } = await supabase
+        .from("enquiries")
+        .insert([enquiryPayload]);
+
+      if (error && isSupabaseConfigured) {
+        console.error("Supabase insert error:", error);
+        setSubmitError(error.message || "Failed to submit enquiry. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Also backup to localStorage
       const newLead = {
         id: `lead-${Date.now()}`,
-        name: formData.fullName.trim(),
-        phone: formData.phone.trim(),
-        email: formData.email.trim(),
-        goal: formData.fitnessGoal,
+        ...enquiryPayload,
         time: formData.preferredTime,
-        message: formData.message.trim(),
-        status: 'New',
         createdAt: new Date().toLocaleString('en-IN', {
           dateStyle: 'medium',
           timeStyle: 'short'
@@ -92,10 +123,9 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
       try {
         const stored = localStorage.getItem('kinetix_leads');
         const existingLeads = stored ? JSON.parse(stored) : [];
-        const updatedLeads = [newLead, ...existingLeads];
-        localStorage.setItem('kinetix_leads', JSON.stringify(updatedLeads));
+        localStorage.setItem('kinetix_leads', JSON.stringify([newLead, ...existingLeads]));
       } catch (err) {
-        console.error('Error saving lead', err);
+        console.error('Error saving local lead backup', err);
       }
 
       if (onLeadSubmitted) {
@@ -104,7 +134,11 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
 
       setIsSubmitting(false);
       setIsSuccess(true);
-    }, 700);
+    } catch (err) {
+      console.error("Submission error:", err);
+      alert("Something went wrong");
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -113,6 +147,7 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
       phone: '',
       email: '',
       fitnessGoal: 'Weight Loss',
+      preferredDate: tomorrowStr,
       preferredTime: 'Morning (6:00 AM – 9:00 AM)',
       message: ''
     });
@@ -126,36 +161,40 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
         <div className="form-success-box" role="alert">
           <CheckCircle2 size={40} className="text-volt" style={{ margin: '0 auto 16px auto', display: 'block' }} />
 
-          <h3 className="success-heading">YOU'RE ON THE LIST</h3>
+          <h3 className="success-heading">YOU'RE ON THE VIP LIST</h3>
           <p className="success-message">
-            Thank you, <strong>{formData.fullName}</strong>. Your 1-Day VIP Trial pass reservation has been recorded.
+            Thank you, <strong>{formData.fullName}</strong>. Your 1-Day VIP Trial Pass has been recorded in our system.
           </p>
 
           <div className="success-meta-card">
             <div className="smc-row">
-              <span className="smc-label">Goal:</span>
-              <span className="smc-val text-volt">{formData.fitnessGoal}</span>
+              <span className="smc-label">Date:</span>
+              <span className="smc-val text-volt">{formData.preferredDate}</span>
             </div>
             <div className="smc-row">
-              <span className="smc-label">Time:</span>
+              <span className="smc-label">Slot:</span>
               <span className="smc-val">{formData.preferredTime}</span>
+            </div>
+            <div className="smc-row">
+              <span className="smc-label">Goal:</span>
+              <span className="smc-val text-volt">{formData.fitnessGoal}</span>
             </div>
           </div>
 
           <p className="success-subtext">
-            Our Senior Membership Advisor will contact you shortly via WhatsApp/Phone to confirm your arrival time and prepare your locker pass.
+            Our Senior Membership Advisor will contact you via WhatsApp/Phone at <strong>{formData.phone}</strong> to confirm arrival and prepare your VIP locker.
           </p>
 
           <div className="success-action-buttons">
             <a
               href={`https://wa.me/${GYM_CONFIG.whatsappNumber}?text=${encodeURIComponent(
-                `Hi, I submitted my VIP Trial on the website. My name is ${formData.fullName} (${formData.phone}). Goal: ${formData.fitnessGoal}.`
+                `Hi, I just booked my VIP Free Trial for ${formData.preferredDate} (${formData.preferredTime}). Name: ${formData.fullName} (${formData.phone}). Goal: ${formData.fitnessGoal}.`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary w-full"
             >
-              Confirm on WhatsApp
+              Confirm via WhatsApp
             </a>
 
             <button onClick={handleReset} className="btn btn-secondary w-full" style={{ marginTop: '10px' }}>
@@ -166,14 +205,21 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
       ) : (
         <form onSubmit={handleSubmit} noValidate className="form-inner">
           <div className="form-header">
-            <span className="section-tag" style={{ marginBottom: '8px' }}>
-              COMPLIMENTARY PASS
+            <span className="section-tag" style={{ marginBottom: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Sparkles size={12} /> COMPLIMENTARY 1-DAY PASS
             </span>
-            <h3 className="form-title">CLAIM YOUR 1-DAY PASS</h3>
+            <h3 className="form-title">BOOK YOUR FREE TRIAL</h3>
             <p className="form-desc">
-              Experience the facility, coaches, and training floor firsthand. No credit card required.
+              Experience our Olympic platforms, bio-sauna, and head coaches. Stored directly in our gym system.
             </p>
           </div>
+
+          {submitError && (
+            <div className="form-error-alert" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger, #ef4444)', padding: '10px 14px', borderRadius: '8px', color: '#fca5a5', marginBottom: '16px', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertCircle size={16} color="#ef4444" />
+              <span>{submitError}</span>
+            </div>
+          )}
 
           {/* Full Name */}
           <div className="form-group">
@@ -186,7 +232,7 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
               name="fullName"
               value={formData.fullName}
               onChange={handleChange}
-              placeholder="e.g. Vikram Malhotra"
+              placeholder="e.g. Rahul Sharma"
               className={`form-input ${errors.fullName ? 'input-error' : ''}`}
               required
             />
@@ -197,74 +243,72 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
             )}
           </div>
 
-          {/* Phone */}
-          <div className="form-group">
-            <label htmlFor="lead-phone" className="form-label">
-              Phone Number <span className="req">*</span>
-            </label>
-            <input
-              type="tel"
-              id="lead-phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="e.g. +91 98765 43210"
-              className={`form-input ${errors.phone ? 'input-error' : ''}`}
-              required
-            />
-            {errors.phone && (
-              <span className="field-error-text">
-                <AlertCircle size={13} /> {errors.phone}
-              </span>
-            )}
-          </div>
-
-          {/* Email */}
-          <div className="form-group">
-            <label htmlFor="lead-email" className="form-label">
-              Email Address <span className="req">*</span>
-            </label>
-            <input
-              type="email"
-              id="lead-email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="e.g. vikram@example.com"
-              className={`form-input ${errors.email ? 'input-error' : ''}`}
-              required
-            />
-            {errors.email && (
-              <span className="field-error-text">
-                <AlertCircle size={13} /> {errors.email}
-              </span>
-            )}
-          </div>
-
-          {/* 2-Columns: Goal & Time */}
+          {/* 2-Columns: Phone & Email */}
           <div className="form-grid-2">
             <div className="form-group">
-              <label htmlFor="lead-goal" className="form-label">
-                Fitness Goal
+              <label htmlFor="lead-phone" className="form-label">
+                Mobile Number <span className="req">*</span>
               </label>
-              <select
-                id="lead-goal"
-                name="fitnessGoal"
-                value={formData.fitnessGoal}
+              <input
+                type="tel"
+                id="lead-phone"
+                name="phone"
+                value={formData.phone}
                 onChange={handleChange}
-                className="form-select"
-              >
-                {goalOptions.map((goal) => (
-                  <option key={goal} value={goal}>
-                    {goal}
-                  </option>
-                ))}
-              </select>
+                placeholder="e.g. 98765 43210"
+                className={`form-input ${errors.phone ? 'input-error' : ''}`}
+                required
+              />
+              {errors.phone && (
+                <span className="field-error-text">
+                  <AlertCircle size={13} /> {errors.phone}
+                </span>
+              )}
             </div>
 
             <div className="form-group">
-              <label htmlFor="lead-time" className="form-label">
-                Preferred Time
+              <label htmlFor="lead-email" className="form-label">
+                Email Address <span className="req">*</span>
+              </label>
+              <input
+                type="email"
+                id="lead-email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="e.g. rahul@example.com"
+                className={`form-input ${errors.email ? 'input-error' : ''}`}
+                required
+              />
+              {errors.email && (
+                <span className="field-error-text">
+                  <AlertCircle size={13} /> {errors.email}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* 2-Columns: Preferred Date & Time */}
+          <div className="form-grid-2">
+            <div className="form-group">
+              <label htmlFor="lead-date" className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Calendar size={13} /> Preferred Date
+              </label>
+              <input
+                type="date"
+                id="lead-date"
+                name="preferredDate"
+                value={formData.preferredDate}
+                min={todayStr}
+                onChange={handleChange}
+                className="form-input"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="lead-time" className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Clock size={13} /> Preferred Time Slot
               </label>
               <select
                 id="lead-time"
@@ -282,10 +326,30 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
             </div>
           </div>
 
+          {/* Fitness Goal */}
+          <div className="form-group">
+            <label htmlFor="lead-goal" className="form-label">
+              Primary Fitness Goal
+            </label>
+            <select
+              id="lead-goal"
+              name="fitnessGoal"
+              value={formData.fitnessGoal}
+              onChange={handleChange}
+              className="form-select"
+            >
+              {goalOptions.map((goal) => (
+                <option key={goal} value={goal}>
+                  {goal}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Message */}
           <div className="form-group">
             <label htmlFor="lead-message" className="form-label">
-              Message or Specific Goals <span className="opt">(Optional)</span>
+              Special Requests or Health Goals <span className="opt">(Optional)</span>
             </label>
             <textarea
               id="lead-message"
@@ -293,7 +357,7 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
               rows={2}
               value={formData.message}
               onChange={handleChange}
-              placeholder="Tell us about previous training experience or injuries..."
+              placeholder="e.g. Want to try deadlifting or InBody body fat scan..."
               className="form-textarea"
             />
           </div>
@@ -308,11 +372,11 @@ export default function LeadForm({ initialSubject = '', onLeadSubmitted }) {
             {isSubmitting ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                <span>RESERVING SPOT...</span>
+                <span>CONFIRMING WITH SUPABASE...</span>
               </>
             ) : (
               <>
-                <span>BOOK MY FREE TRIAL</span>
+                <span>CONFIRM FREE TRIAL PASS</span>
                 <ArrowRight size={16} />
               </>
             )}

@@ -67,7 +67,7 @@ export default function Hero({ onOpenBooking }) {
           <div className="hero-social-proof-clean">
             <div className="stars-mini">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} size={14} fill="#CCFF00" color="#CCFF00" />
+                <Star key={i} size={14} fill="var(--accent)" color="var(--accent)" />
               ))}
             </div>
             <span className="proof-text-clean">
