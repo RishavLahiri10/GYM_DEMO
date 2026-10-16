@@ -10,11 +10,20 @@ import {
   User,
   LogIn,
   Sun,
-  Moon
+  Moon,
+  QrCode
 } from 'lucide-react';
 import { getStoredTheme, saveTheme } from '../utils/themeManager';
 
-export default function Navbar({ onOpenBooking, onOpenAdmin, isAdminOpen, onOpenAuth, authUser }) {
+export default function Navbar({ 
+  onOpenBooking, 
+  onOpenAdmin, 
+  isAdminOpen, 
+  onOpenMemberPortal,
+  isMemberPortalOpen,
+  onOpenAuth, 
+  authUser 
+}) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
@@ -58,6 +67,18 @@ export default function Navbar({ onOpenBooking, onOpenAdmin, isAdminOpen, onOpen
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Lock background scrolling when mobile menu drawer is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
   const navLinks = [
     { name: 'About', href: '#about' },
@@ -175,23 +196,38 @@ export default function Navbar({ onOpenBooking, onOpenAdmin, isAdminOpen, onOpen
                 title={isDarkMode ? "Switch to Light Theme" : "Switch to Dark Theme"}
                 aria-label="Toggle Theme Mode"
                 id="navbar-theme-toggle-btn"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
                 {isDarkMode ? <Sun size={15} color="var(--accent, #ccff00)" /> : <Moon size={15} />}
-                <span style={{ fontSize: '0.78rem' }}>{isDarkMode ? 'Light' : 'Dark'}</span>
+                <span className="nav-btn-text">{isDarkMode ? 'Light' : 'Dark'}</span>
               </button>
 
-              {/* Member / Account Login Button (Admin button is strictly removed from public navbar) */}
+              {/* Athlete Pass & Member Portal Button */}
+              <button
+                type="button"
+                onClick={() => onOpenMemberPortal && onOpenMemberPortal(authUser)}
+                className="admin-toggle-btn nav-athlete-pass-btn"
+                title="Open Member Experience Portal, Digital QR Pass & Workouts"
+                id="navbar-athlete-pass-btn"
+                style={{
+                  background: 'rgba(204, 255, 0, 0.12)',
+                  borderColor: 'rgba(204, 255, 0, 0.4)',
+                  color: 'var(--accent, #ccff00)'
+                }}
+              >
+                <QrCode size={14} />
+                <span className="nav-btn-text">Athlete Pass</span>
+              </button>
+
+              {/* Member / Account Login Button */}
               <button
                 type="button"
                 onClick={() => onOpenAuth && onOpenAuth('login')}
-                className="admin-toggle-btn"
+                className="admin-toggle-btn nav-auth-toggle-btn"
                 title="Member Login & Account"
                 id="navbar-auth-btn"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
                 <User size={14} />
-                <span>{getAuthButtonLabel()}</span>
+                <span className="nav-btn-text">{getAuthButtonLabel()}</span>
               </button>
 
               {/* Direct Phone link */}
@@ -207,7 +243,7 @@ export default function Navbar({ onOpenBooking, onOpenAdmin, isAdminOpen, onOpen
               {/* Book Free Trial Button */}
               <button
                 onClick={() => onOpenBooking('Free Trial')}
-                className="btn btn-primary btn-sm"
+                className="btn btn-primary btn-sm nav-desktop-trial-btn"
                 id="navbar-book-free-trial-btn"
               >
                 <span>BOOK FREE TRIAL</span>
@@ -285,6 +321,30 @@ export default function Navbar({ onOpenBooking, onOpenAdmin, isAdminOpen, onOpen
           >
             {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
             <span>Switch to {isDarkMode ? 'Light Theme' : 'Dark Theme'}</span>
+          </button>
+
+          {/* Athlete Experience & Digital QR Pass */}
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              if (onOpenMemberPortal) onOpenMemberPortal(authUser);
+            }}
+            className="btn btn-secondary w-full"
+            style={{ 
+              marginTop: '10px', 
+              background: 'rgba(204, 255, 0, 0.1)', 
+              borderColor: 'var(--accent, #ccff00)', 
+              color: 'var(--accent, #ccff00)',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            id="mobile-drawer-member-portal-btn"
+          >
+            <QrCode size={16} />
+            <span>⚡ ATHLETE PASS & WORKOUTS</span>
           </button>
 
           <button

@@ -13,11 +13,20 @@ import {
   LogOut,
   Sparkles,
   Key,
-  LayoutDashboard
+  LayoutDashboard,
+  QrCode
 } from 'lucide-react';
 import { getAdminCredentials } from './AdminDashboard';
+import { DEMO_USERS, USER_ROLES, setStoredUser } from '../services/authService';
 
-export default function AuthModal({ isOpen, onClose, onAuthSuccess, onOpenAdmin, initialMode = 'login' }) {
+export default function AuthModal({ 
+  isOpen, 
+  onClose, 
+  onAuthSuccess, 
+  onOpenAdmin, 
+  onOpenMemberPortal,
+  initialMode = 'login' 
+}) {
   const [mode, setMode] = useState(initialMode); // 'login' | 'register'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -221,6 +230,28 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, onOpenAdmin,
     }
   };
 
+  // Instant 1-Click Persona Switcher (Owner, Manager, Coach, Member)
+  const handleSelectPersona = (persona) => {
+    localStorage.setItem('kinetix_auth_user', JSON.stringify(persona));
+    setStoredUser(persona);
+    setCurrentUser(persona);
+    if (persona.role === USER_ROLES.MEMBER) {
+      setSuccessMsg(`Welcome, ${persona.name}! Opening Athlete Experience Portal...`);
+      if (onAuthSuccess) onAuthSuccess(persona);
+      setTimeout(() => {
+        onClose();
+        if (onOpenMemberPortal) onOpenMemberPortal(persona);
+      }, 500);
+    } else {
+      setSuccessMsg(`Welcome, ${persona.name} (${persona.title})! Opening Command Center...`);
+      if (onAuthSuccess) onAuthSuccess(persona);
+      setTimeout(() => {
+        onClose();
+        if (onOpenAdmin) onOpenAdmin();
+      }, 500);
+    }
+  };
+
   return (
     <div className="booking-modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
       <div 
@@ -330,7 +361,40 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, onOpenAdmin,
               <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {Boolean(
                   currentUser && (
+                    currentUser.role === USER_ROLES.MEMBER ||
+                    currentUser.user_metadata?.role === 'member' ||
+                    currentUser.email === 'vikram.s@example.com' ||
+                    currentUser.memberId
+                  )
+                ) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      if (onOpenMemberPortal) onOpenMemberPortal(currentUser);
+                    }}
+                    className="btn btn-primary w-full"
+                    style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '8px',
+                      background: 'linear-gradient(135deg, var(--accent, #ccff00) 0%, #10B981 100%)',
+                      color: '#000',
+                      fontWeight: 800
+                    }}
+                  >
+                    <QrCode size={16} /> Open Athlete Member Portal & QR Pass
+                  </button>
+                )}
+
+                {Boolean(
+                  currentUser && (
                     currentUser.role === 'admin' ||
+                    currentUser.role === USER_ROLES.OWNER ||
+                    currentUser.role === USER_ROLES.ADMIN ||
+                    currentUser.role === USER_ROLES.MANAGER ||
+                    currentUser.role === USER_ROLES.TRAINER ||
                     currentUser.user_metadata?.role === 'admin' ||
                     (currentUser.email && currentUser.email.toLowerCase().startsWith('admin'))
                   )
@@ -344,7 +408,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, onOpenAdmin,
                     className="btn btn-primary w-full"
                     style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
-                    <LayoutDashboard size={16} /> Open Admin Portal
+                    <LayoutDashboard size={16} /> Open Admin Command Center
                   </button>
                 )}
                 <button
@@ -462,6 +526,75 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, onOpenAdmin,
                   )}
                 </button>
               </form>
+
+              {/* Instant 1-Click Demo Personas (Owner, Manager, Coach, Member) */}
+              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-light, rgba(255,255,255,0.08))' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Sparkles size={14} color="var(--accent, #ccff00)" />
+                    <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                      DEMO PERSONAS (1-CLICK ACCESS)
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.68rem', color: '#64748B' }}>Tap to test instantly</span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                  {DEMO_USERS.map((demo) => {
+                    const isMem = demo.role === USER_ROLES.MEMBER;
+                    return (
+                      <button
+                        key={demo.id}
+                        type="button"
+                        onClick={() => handleSelectPersona(demo)}
+                        style={{
+                          background: isMem ? 'rgba(204, 255, 0, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                          border: isMem ? '1px solid rgba(204, 255, 0, 0.35)' : '1px solid var(--border-light, rgba(255,255,255,0.08))',
+                          borderRadius: '8px',
+                          padding: '8px 10px',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                          transition: 'all 0.2s',
+                          color: 'inherit'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = isMem ? 'var(--accent, #ccff00)' : '#94A3B8';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = isMem ? 'rgba(204, 255, 0, 0.35)' : 'var(--border-light, rgba(255,255,255,0.08))';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: isMem ? 'var(--accent, #ccff00)' : '#FFFFFF' }}>
+                            {demo.role === 'OWNER' && '👑 Owner'}
+                            {demo.role === 'MANAGER' && '💼 Manager'}
+                            {demo.role === 'TRAINER' && '🏋️ Head Coach'}
+                            {demo.role === 'MEMBER' && '📱 VIP Member'}
+                          </span>
+                          <span style={{ 
+                            fontSize: '0.65rem', 
+                            padding: '1px 5px', 
+                            borderRadius: '4px',
+                            background: isMem ? 'var(--accent, #ccff00)' : 'rgba(255,255,255,0.1)',
+                            color: isMem ? '#000' : '#E2E8F0',
+                            fontWeight: 700
+                          }}>
+                            {isMem ? 'PORTAL' : 'STAFF'}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.72rem', color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {demo.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>

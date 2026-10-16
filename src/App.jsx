@@ -20,6 +20,8 @@ import BookingModal from './components/BookingModal';
 import AdminDashboard from './components/AdminDashboard';
 import AuthModal from './components/AuthModal';
 import UserThemeWidget from './components/UserThemeWidget';
+import MemberPortal from './features/memberPortal/MemberPortal';
+import { DEMO_USERS, USER_ROLES } from './services/authService';
 import { supabase } from './lib/supabaseClient';
 import { getStoredTheme, applyTheme } from './utils/themeManager';
 import './App.css';
@@ -28,6 +30,8 @@ export default function App() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingContext, setBookingContext] = useState('');
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isMemberPortalOpen, setIsMemberPortalOpen] = useState(false);
+  const [activeMemberUser, setActiveMemberUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
   const [authUser, setAuthUser] = useState(null);
@@ -95,7 +99,7 @@ export default function App() {
     };
   }, []);
 
-  // 8. Route check: Automatically open Admin Dashboard if URL is /admin, #admin, or ?admin=true
+  // 8. Route check: Automatically open Admin Dashboard or Member Portal if URL matches
   useEffect(() => {
     const handleRouteChange = () => {
       const path = window.location.pathname;
@@ -103,6 +107,10 @@ export default function App() {
       const search = window.location.search;
       if (path === '/admin' || hash === '#admin' || search.includes('admin=true')) {
         setIsAdminOpen(true);
+        setIsMemberPortalOpen(false);
+      } else if (path === '/portal' || hash === '#portal' || hash === '#member' || search.includes('portal=true')) {
+        setIsMemberPortalOpen(true);
+        setIsAdminOpen(false);
       }
     };
 
@@ -127,6 +135,7 @@ export default function App() {
 
   const handleOpenAdmin = () => {
     setIsAdminOpen(true);
+    setIsMemberPortalOpen(false);
     if (window.location.hash !== '#admin' && window.location.pathname !== '/admin') {
       try {
         window.history.pushState(null, '', '#admin');
@@ -137,6 +146,33 @@ export default function App() {
   const handleCloseAdmin = () => {
     setIsAdminOpen(false);
     if (window.location.hash === '#admin') {
+      try {
+        window.history.pushState(null, '', window.location.pathname);
+      } catch (e) {}
+    }
+  };
+
+  const handleOpenMemberPortal = (member = null) => {
+    if (member) {
+      setActiveMemberUser(member);
+    } else if (authUser && (authUser.role === USER_ROLES.MEMBER || authUser.user_metadata?.role === 'member')) {
+      setActiveMemberUser(authUser);
+    } else {
+      const demoMember = DEMO_USERS.find(u => u.role === USER_ROLES.MEMBER);
+      setActiveMemberUser(demoMember);
+    }
+    setIsMemberPortalOpen(true);
+    setIsAdminOpen(false);
+    if (window.location.hash !== '#portal') {
+      try {
+        window.history.pushState(null, '', '#portal');
+      } catch (e) {}
+    }
+  };
+
+  const handleCloseMemberPortal = () => {
+    setIsMemberPortalOpen(false);
+    if (window.location.hash === '#portal' || window.location.hash === '#member') {
       try {
         window.history.pushState(null, '', window.location.pathname);
       } catch (e) {}
@@ -159,6 +195,8 @@ export default function App() {
         onOpenBooking={handleOpenBooking} 
         onOpenAdmin={handleOpenAdmin}
         isAdminOpen={isAdminOpen}
+        onOpenMemberPortal={handleOpenMemberPortal}
+        isMemberPortalOpen={isMemberPortalOpen}
         onOpenAuth={handleOpenAuth}
         authUser={authUser}
       />
@@ -228,32 +266,61 @@ export default function App() {
         isOpen={isAuthModalOpen}
         onClose={handleCloseAuth}
         initialMode={authModalMode}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={() => {
+          setIsAdminOpen(true);
+          setIsMemberPortalOpen(false);
+        }}
+        onOpenMemberPortal={(user) => {
+          handleOpenMemberPortal(user);
+        }}
         onAuthSuccess={(user) => {
           setAuthUser(user);
-          const isAdmin = Boolean(
+          const isMember = Boolean(
+            user && (
+              user.role === USER_ROLES.MEMBER ||
+              user.user_metadata?.role === 'member' ||
+              user.email === 'vikram.s@example.com' ||
+              (typeof user.memberId === 'string')
+            )
+          );
+          const isAdminOrStaff = Boolean(
             user && (
               user.role === 'admin' ||
+              user.role === USER_ROLES.OWNER ||
+              user.role === USER_ROLES.ADMIN ||
+              user.role === USER_ROLES.MANAGER ||
+              user.role === USER_ROLES.TRAINER ||
+              user.role === USER_ROLES.RECEPTIONIST ||
               user.user_metadata?.role === 'admin' ||
               user.email === 'admin@01' ||
               user.email === 'admin@01.com' ||
               (typeof user.email === 'string' && user.email.toLowerCase().startsWith('admin@'))
             )
           );
-          if (isAdmin) {
-            // Open Admin Portal immediately for verified admin credentials
+
+          if (isMember) {
+            handleOpenMemberPortal(user);
+          } else if (isAdminOrStaff) {
             setIsAdminOpen(true);
+            setIsMemberPortalOpen(false);
           } else {
-            // Normal user: website stays open, portal remains closed
             setIsAdminOpen(false);
+            setIsMemberPortalOpen(false);
           }
         }}
       />
 
-      {/* Admin / Manager Portal Modal (8 Sections + Supabase Auth Guard) */}
+      {/* Admin / Manager / Staff Command Center (Operations & Finance) */}
       <AdminDashboard
         isOpen={isAdminOpen}
         onClose={handleCloseAdmin}
+      />
+
+      {/* Dedicated Mobile-First Member Experience & QR Pass Portal */}
+      <MemberPortal
+        isOpen={isMemberPortalOpen}
+        onClose={handleCloseMemberPortal}
+        memberUser={activeMemberUser}
       />
     </div>
   );

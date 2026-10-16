@@ -45,10 +45,16 @@ function TransformationCard({ item, onOpenBooking }) {
         />
         <span className="img-tag tag-after">AFTER</span>
 
-        {/* Before Image */}
+        {/* Before Image with responsive inset clipping */}
         <div 
           className="comparison-clip"
-          style={{ width: `${sliderPosition}%` }}
+          style={{ 
+            position: 'absolute', 
+            inset: 0, 
+            width: '100%', 
+            height: '100%', 
+            clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` 
+          }}
         >
           <img 
             src={item.beforeImg || item.before_image_url} 

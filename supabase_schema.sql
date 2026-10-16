@@ -377,3 +377,142 @@ INSERT INTO public.member_payments (id, member_id, month_year, month_name, amoun
 ('pay-12', 'mem-5', '2026-09', 'September 2026', 2499, '2026-09-22', 'UPI', 'Paid', 'REC-2026-0905')
 ON CONFLICT (id) DO NOTHING;
 
+-- ==============================================================================
+-- SAAS PLATFORM EXPANSIONS: CRM, ATTENDANCE, INVOICES, EXPENSES & ATHLETE PORTAL
+-- ==============================================================================
+
+-- 11. LEADS TABLE (Commercial CRM Sales Pipeline)
+CREATE TABLE IF NOT EXISTS public.leads (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT,
+    phone TEXT NOT NULL,
+    status TEXT DEFAULT 'NEW', -- 'NEW', 'CONTACTED', 'TRIAL_BOOKED', 'TRIAL_DONE', 'NEGOTIATION', 'CONVERTED', 'LOST'
+    source TEXT DEFAULT 'Instagram',
+    interested_plan TEXT DEFAULT 'PRO',
+    budget NUMERIC DEFAULT 1499,
+    assigned_to TEXT DEFAULT 'Priya Sen',
+    notes TEXT
+);
+
+-- 12. LEAD FOLLOWUPS TABLE
+CREATE TABLE IF NOT EXISTS public.lead_followups (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    lead_id TEXT NOT NULL REFERENCES public.leads(id) ON DELETE CASCADE,
+    scheduled_date DATE NOT NULL,
+    type TEXT DEFAULT 'CALL', -- 'CALL', 'WHATSAPP', 'TOUR', 'TRIAL'
+    notes TEXT,
+    completed BOOLEAN DEFAULT false
+);
+
+-- 13. FLOOR ATTENDANCE TABLE (Live Check-in & Biometrics)
+CREATE TABLE IF NOT EXISTS public.attendance (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    member_id TEXT NOT NULL,
+    member_name TEXT NOT NULL,
+    plan TEXT DEFAULT 'PRO',
+    check_in_time TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    check_out_time TIMESTAMP WITH TIME ZONE,
+    method TEXT DEFAULT 'Digital QR', -- 'Digital QR', 'Biometric Turnstile', 'Front Desk Manual'
+    status TEXT DEFAULT 'Active'
+);
+
+-- 14. INVOICES TABLE (GST Tax Invoices & Member Receipts)
+CREATE TABLE IF NOT EXISTS public.invoices (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    invoice_number TEXT UNIQUE NOT NULL,
+    member_id TEXT NOT NULL,
+    member_name TEXT NOT NULL,
+    plan_name TEXT NOT NULL,
+    duration TEXT DEFAULT '1 Year',
+    subtotal NUMERIC NOT NULL,
+    tax_rate NUMERIC DEFAULT 0.18,
+    tax_amount NUMERIC NOT NULL,
+    total_amount NUMERIC NOT NULL,
+    payment_method TEXT DEFAULT 'UPI',
+    issue_date DATE DEFAULT CURRENT_DATE,
+    due_date DATE DEFAULT CURRENT_DATE,
+    status TEXT DEFAULT 'Paid',
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 15. EXPENSES TABLE (Gym Facility Operational Expenses & P&L)
+CREATE TABLE IF NOT EXISTS public.expenses (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL, -- 'EQUIPMENT', 'RENT', 'UTILITIES', 'STAFF', 'MAINTENANCE', 'MARKETING'
+    amount NUMERIC NOT NULL,
+    payment_mode TEXT DEFAULT 'Net Banking',
+    expense_date DATE DEFAULT CURRENT_DATE,
+    vendor TEXT,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 16. MEMBER BODY PROGRESS TABLE (Transformation & Weigh-Ins)
+CREATE TABLE IF NOT EXISTS public.member_progress (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    member_id TEXT NOT NULL,
+    date DATE DEFAULT CURRENT_DATE,
+    weight NUMERIC NOT NULL,
+    body_fat NUMERIC,
+    chest NUMERIC,
+    waist NUMERIC,
+    arms NUMERIC,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 17. CLASS BOOKINGS TABLE
+CREATE TABLE IF NOT EXISTS public.class_bookings (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    member_id TEXT NOT NULL,
+    class_id TEXT NOT NULL,
+    class_name TEXT NOT NULL,
+    booking_date DATE DEFAULT CURRENT_DATE,
+    status TEXT DEFAULT 'Confirmed',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable RLS for SaaS Tables
+ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lead_followups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.member_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.class_bookings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admin full access leads" ON public.leads FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);
+CREATE POLICY "Admin full access lead_followups" ON public.lead_followups FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);
+CREATE POLICY "Admin full access attendance" ON public.attendance FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);
+CREATE POLICY "Admin full access invoices" ON public.invoices FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);
+CREATE POLICY "Admin full access expenses" ON public.expenses FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);
+CREATE POLICY "Full access member_progress" ON public.member_progress FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);
+CREATE POLICY "Full access class_bookings" ON public.class_bookings FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);
+
+-- Seed Leads
+INSERT INTO public.leads (id, name, email, phone, status, source, interested_plan, budget, assigned_to, notes) VALUES
+('lead-1', 'Rajesh Kothari', 'rajesh.k@venture.in', '+91 98201 12345', 'NEW', 'Instagram', 'ELITE VIP', 2499, 'Priya Sen', 'Interested in personal coaching & sauna'),
+('lead-2', 'Meera Swaminathan', 'meera.s@health.org', '+91 98452 67890', 'TRIAL_BOOKED', 'Website Free Trial', 'PRO', 1499, 'Priya Sen', 'Trial booked for Saturday 07:30 AM'),
+('lead-3', 'Aditya Singhal', 'aditya.s@techfin.co', '+91 97110 33445', 'NEGOTIATION', 'Walk-in', 'ELITE VIP', 2499, 'Arjun Sharma', 'Discussing 1-year prepaid corporate package')
+ON CONFLICT (id) DO NOTHING;
+
+-- Seed Invoices
+INSERT INTO public.invoices (id, invoice_number, member_id, member_name, plan_name, duration, subtotal, tax_amount, total_amount, payment_method, issue_date) VALUES
+('inv-1', 'INV-2026-001', 'mem-1', 'Vikram Sharma', 'ELITE VIP', '1 Year', 25415, 4575, 29990, 'UPI', '2025-08-10'),
+('inv-2', 'INV-2026-002', 'mem-2', 'Priya Menon', 'PRO', '6 Months', 7620, 1372, 8992, 'Card', '2026-04-18')
+ON CONFLICT (id) DO NOTHING;
+
+-- Seed Expenses
+INSERT INTO public.expenses (id, title, category, amount, payment_mode, expense_date, vendor, notes) VALUES
+('exp-1', 'Eleiko Olympic Bumper Plates & Barbells', 'EQUIPMENT', 85000, 'Net Banking', '2026-10-01', 'Eleiko India', 'Upgraded lifting platforms 1 & 2'),
+('exp-2', 'Club Premium Airflow & HVAC Servicing', 'MAINTENANCE', 16500, 'UPI', '2026-10-04', 'Daikin Commercial', 'Quarterly maintenance of main workout floors'),
+('exp-3', 'Meta & Google Ads Campaign', 'MARKETING', 24000, 'Card', '2026-10-06', 'Meta Ads', 'Lead acquisition for October trial festival')
+ON CONFLICT (id) DO NOTHING;
+
+

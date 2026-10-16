@@ -1,0 +1,141 @@
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+
+const INITIAL_ATTENDANCE = [
+  {
+    id: 'att-1',
+    member_id: 'mem-1',
+    member_name: 'Vikram Sharma',
+    plan: 'ELITE',
+    date: new Date().toISOString().slice(0, 10),
+    check_in_time: '06:15 AM',
+    check_out_time: '07:45 AM',
+    method: 'QR Pass',
+    status: 'Completed'
+  },
+  {
+    id: 'att-2',
+    member_id: 'mem-4',
+    member_name: 'Ananya Gupta',
+    plan: 'PRO',
+    date: new Date().toISOString().slice(0, 10),
+    check_in_time: '06:30 AM',
+    check_out_time: '07:30 AM',
+    method: 'QR Pass',
+    status: 'Completed'
+  },
+  {
+    id: 'att-3',
+    member_id: 'mem-2',
+    member_name: 'Priya Menon',
+    plan: 'PRO',
+    date: new Date().toISOString().slice(0, 10),
+    check_in_time: '08:00 AM',
+    check_out_time: null,
+    method: 'Manual Check-in',
+    status: 'On Floor (Active)'
+  },
+  {
+    id: 'att-4',
+    member_id: 'mem-5',
+    member_name: 'Sameer Joshi',
+    plan: 'ELITE',
+    date: new Date().toISOString().slice(0, 10),
+    check_in_time: '08:45 AM',
+    check_out_time: null,
+    method: 'QR Pass',
+    status: 'On Floor (Active)'
+  }
+];
+
+export const getAttendanceLogs = async () => {
+  try {
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase
+        .from('attendance')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data && data.length > 0) return data;
+    }
+  } catch (e) {}
+
+  const stored = localStorage.getItem('kinetix_attendance_logs');
+  if (stored) {
+    try { return JSON.parse(stored); } catch (e) {}
+  }
+  localStorage.setItem('kinetix_attendance_logs', JSON.stringify(INITIAL_ATTENDANCE));
+  return INITIAL_ATTENDANCE;
+};
+
+export const recordCheckIn = async (member, method = 'Manual Check-in') => {
+  const current = await getAttendanceLogs();
+  const now = new Date();
+  const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const dateString = now.toISOString().slice(0, 10);
+
+  const newLog = {
+    id: `att-${Date.now()}`,
+    member_id: member.id,
+    member_name: member.name,
+    plan: member.plan || 'PRO',
+    date: dateString,
+    check_in_time: timeString,
+    check_out_time: null,
+    method,
+    status: 'On Floor (Active)',
+    created_at: now.toISOString()
+  };
+
+  const updated = [newLog, ...current];
+  localStorage.setItem('kinetix_attendance_logs', JSON.stringify(updated));
+
+  if (isSupabaseConfigured) {
+    try {
+      await supabase.from('attendance').insert([newLog]);
+    } catch (e) {}
+  }
+
+  window.dispatchEvent(new Event('kinetix_attendance_updated'));
+  return newLog;
+};
+
+export const recordCheckOut = async (logId) => {
+  const current = await getAttendanceLogs();
+  const now = new Date();
+  const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  const updated = current.map(item => {
+    if (item.id === logId) {
+      return {
+        ...item,
+        check_out_time: timeString,
+        status: 'Completed'
+      };
+    }
+    return item;
+  });
+
+  localStorage.setItem('kinetix_attendance_logs', JSON.stringify(updated));
+
+  if (isSupabaseConfigured) {
+    try {
+      await supabase.from('attendance').update({ check_out_time: timeString, status: 'Completed' }).eq('id', logId);
+    } catch (e) {}
+  }
+
+  window.dispatchEvent(new Event('kinetix_attendance_updated'));
+  return updated;
+};
+
+export const getMemberAttendanceStats = async (memberId) => {
+  const logs = await getAttendanceLogs();
+  const memberLogs = logs.filter(l => l.member_id === memberId);
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const monthLogs = memberLogs.filter(l => l.date && l.date.startsWith(thisMonth));
+
+  return {
+    totalSessions: memberLogs.length,
+    thisMonthSessions: monthLogs.length,
+    streak: Math.min(memberLogs.length, 12),
+    recentLogs: memberLogs.slice(0, 10)
+  };
+};
