@@ -46,15 +46,22 @@ export default function MemberPortal({ isOpen, onClose, memberUser, onSwitchToPu
   const [qrCheckedIn, setQrCheckedIn] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
 
-  const currentMember = memberUser || {
-    id: 'mem-1',
-    name: 'Vikram Sharma',
-    email: 'vikram.s@example.com',
-    plan: 'ELITE VIP',
-    plan_duration: '1 Year',
-    memberId: 'KNTX-8821',
-    expiryDate: '2026-08-10',
-    trainer: 'Arjun Sharma'
+  const toastMsgTimeoutRef = React.useRef(null);
+
+  const memberName = 
+    memberUser?.name || 
+    memberUser?.user_metadata?.full_name || 
+    (memberUser?.email ? memberUser.email.split('@')[0] : 'Vikram Sharma');
+
+  const currentMember = {
+    id: memberUser?.id || memberUser?.memberId || 'mem-1',
+    name: memberName,
+    email: memberUser?.email || 'vikram.s@example.com',
+    plan: memberUser?.plan || memberUser?.user_metadata?.plan || 'ELITE VIP',
+    plan_duration: memberUser?.plan_duration || '1 Year',
+    memberId: memberUser?.memberId || 'KNTX-8821',
+    expiryDate: memberUser?.expiryDate || '2026-08-10',
+    trainer: memberUser?.trainer || 'Arjun Sharma'
   };
 
   useEffect(() => {
@@ -258,7 +265,7 @@ export default function MemberPortal({ isOpen, onClose, memberUser, onSwitchToPu
                 <div className="mp-welcome-card">
                   <div className="mp-welcome-info">
                     <span className="mp-welcome-badge">ATHLETE PROFILE</span>
-                    <h2>Good day, {currentMember.name.split(' ')[0]}! 🔥</h2>
+                    <h2>Good day, {currentMember.name ? currentMember.name.split(' ')[0] : 'Athlete'}! 🔥</h2>
                     <p>You have logged <strong>{attendanceStats.thisMonthSessions || 8} sessions</strong> this month. Your next workout is ready.</p>
                   </div>
                   <div className="mp-streak-pill">

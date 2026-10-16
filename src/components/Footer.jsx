@@ -187,17 +187,22 @@ export default function Footer({ onOpenBooking }) {
           </div>
 
           <div className="fb-center">
-            <p className="maintainer-text">
-              Website Designed &amp; Maintained by{' '}
-              <a 
-                href="https://bizelevate.in" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="bizelevate-link"
-              >
-                BizElevate
-              </a>
-            </p>
+            <a 
+              href="https://biz1-ten.vercel.app/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="bizelevate-product-badge"
+              title="A Product Of BizElevate"
+              id="footer-bizelevate-link"
+            >
+              <span className="bizelevate-prefix">A Product Of</span>
+              <img 
+                src="/bizelevate-logo.png" 
+                alt="BizElevate Brand Logo" 
+                className="bizelevate-badge-logo"
+              />
+              <span className="bizelevate-brand-title">BizElevate</span>
+            </a>
           </div>
 
           <div className="fb-right">
