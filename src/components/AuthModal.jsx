@@ -16,8 +16,7 @@ import {
   LayoutDashboard,
   QrCode
 } from 'lucide-react';
-import { getAdminCredentials } from './AdminDashboard';
-import { DEMO_USERS, USER_ROLES, setStoredUser } from '../services/authService';
+import { DEMO_USERS, USER_ROLES, setStoredUser, getAdminCredentials } from '../services/authService';
 
 export default function AuthModal({ 
   isOpen, 

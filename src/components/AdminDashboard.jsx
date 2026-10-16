@@ -54,32 +54,16 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Receipt,
   History
 } from 'lucide-react';
+import { 
+  DEFAULT_ADMIN_CREDS, 
+  getAdminCredentials, 
+  saveAdminCredentials 
+} from '../services/authService';
 
-// Admin Credentials Manager
-export const DEFAULT_ADMIN_CREDS = {
-  username: 'admin@01',
-  password: 'biz01'
-};
-
-export const getAdminCredentials = () => {
-  try {
-    const saved = localStorage.getItem('kinetix_admin_credentials');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.username && parsed.password) return parsed;
-    }
-  } catch (e) {}
-  return DEFAULT_ADMIN_CREDS;
-};
-
-export const saveAdminCredentials = (username, password) => {
-  localStorage.setItem('kinetix_admin_credentials', JSON.stringify({ username, password }));
-};
+export { DEFAULT_ADMIN_CREDS, getAdminCredentials, saveAdminCredentials };
 
 export default function AdminDashboard({ isOpen, onClose }) {
   // Navigation Tabs:

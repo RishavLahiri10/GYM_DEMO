@@ -53,7 +53,7 @@ export const getStoredUser = () => {
   try {
     const raw = localStorage.getItem('kinetix_active_user');
     if (raw) return JSON.parse(raw);
-  } catch (e) {}
+  } catch (e) { }
   return null;
 };
 
@@ -71,4 +71,26 @@ export const hasPermission = (userRole, requiredRoles = []) => {
   const role = userRole.toUpperCase();
   if (role === USER_ROLES.OWNER || role === USER_ROLES.ADMIN) return true;
   return requiredRoles.includes(role);
+};
+
+export const DEFAULT_ADMIN_CREDS = {
+  username: 'admin@01',
+  password: 'biz01'
+};
+
+export const getAdminCredentials = () => {
+  try {
+    const stored = localStorage.getItem('kinetix_admin_credentials');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed.username && parsed.password) {
+        return parsed;
+      }
+    }
+  } catch (_e) { }
+  return DEFAULT_ADMIN_CREDS;
+};
+
+export const saveAdminCredentials = (username, password) => {
+  localStorage.setItem('kinetix_admin_credentials', JSON.stringify({ username, password }));
 };
