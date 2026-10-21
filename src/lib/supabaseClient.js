@@ -1,7 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
-const envUrl = import.meta.env.VITE_SUPABASE_URL;
-const envKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const rawUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+const envUrl = rawUrl
+  ? rawUrl.startsWith('http://') || rawUrl.startsWith('https://')
+    ? rawUrl
+    : `https://${rawUrl}.supabase.co`
+  : '';
+const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
 // Check if credentials are valid non-placeholder strings
 export const isSupabaseConfigured = Boolean(
@@ -12,7 +17,8 @@ export const isSupabaseConfigured = Boolean(
   envKey &&
   typeof envKey === 'string' &&
   envKey.length > 10 &&
-  !envKey.includes('your_publishable_key')
+  !envKey.includes('your_publishable_key') &&
+  !envKey.includes('your_anon_key')
 );
 
 // Fallback mock client so the app runs smoothly with offline local-first sync
