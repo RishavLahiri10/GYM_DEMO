@@ -130,6 +130,13 @@ CREATE TABLE IF NOT EXISTS public.members (
     notes TEXT
 );
 
+-- Ensure all columns exist even if members table was previously created with an older schema
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS plan_duration TEXT DEFAULT '1 Year';
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS fee_amount NUMERIC DEFAULT 1499;
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS last_paid_date DATE DEFAULT CURRENT_DATE;
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS next_due_date DATE DEFAULT (CURRENT_DATE + INTERVAL '1 month');
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS notes TEXT;
+
 -- 10. MEMBER MONTHLY FEE PAYMENTS & CALENDAR LEDGER TABLE
 CREATE TABLE IF NOT EXISTS public.member_payments (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -172,16 +179,16 @@ CREATE POLICY "Public media read access on gym-trainers" ON storage.objects FOR 
 CREATE POLICY "Public media read access on gym-transformations" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id = 'gym-transformations');
 CREATE POLICY "Public media read access on gym-testimonials" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id = 'gym-testimonials');
 
--- Storage Policies: Authenticated Admin can upload/modify files
+-- Storage Policies: Authenticated Admin & client upload/modify files
 DROP POLICY IF EXISTS "Admin upload access on gym-gallery" ON storage.objects;
 DROP POLICY IF EXISTS "Admin upload access on gym-trainers" ON storage.objects;
 DROP POLICY IF EXISTS "Admin upload access on gym-transformations" ON storage.objects;
 DROP POLICY IF EXISTS "Admin upload access on gym-testimonials" ON storage.objects;
 
-CREATE POLICY "Admin upload access on gym-gallery" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'gym-gallery');
-CREATE POLICY "Admin upload access on gym-trainers" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'gym-trainers');
-CREATE POLICY "Admin upload access on gym-transformations" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'gym-transformations');
-CREATE POLICY "Admin upload access on gym-testimonials" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'gym-testimonials');
+CREATE POLICY "Admin upload access on gym-gallery" ON storage.objects FOR ALL TO authenticated, anon USING (bucket_id = 'gym-gallery') WITH CHECK (bucket_id = 'gym-gallery');
+CREATE POLICY "Admin upload access on gym-trainers" ON storage.objects FOR ALL TO authenticated, anon USING (bucket_id = 'gym-trainers') WITH CHECK (bucket_id = 'gym-trainers');
+CREATE POLICY "Admin upload access on gym-transformations" ON storage.objects FOR ALL TO authenticated, anon USING (bucket_id = 'gym-transformations') WITH CHECK (bucket_id = 'gym-transformations');
+CREATE POLICY "Admin upload access on gym-testimonials" ON storage.objects FOR ALL TO authenticated, anon USING (bucket_id = 'gym-testimonials') WITH CHECK (bucket_id = 'gym-testimonials');
 
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -198,11 +205,17 @@ ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.member_payments ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS fee_amount NUMERIC DEFAULT 1499;
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS plan_duration TEXT DEFAULT '1 Year';
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS last_paid_date DATE DEFAULT CURRENT_DATE;
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS next_due_date DATE DEFAULT (CURRENT_DATE + INTERVAL '1 month');
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS notes TEXT;
+
 -- 1. Enquiries
 DROP POLICY IF EXISTS "Public can submit enquiries" ON public.enquiries;
 DROP POLICY IF EXISTS "Admins full access to enquiries" ON public.enquiries;
 CREATE POLICY "Public can submit enquiries" ON public.enquiries FOR INSERT TO anon, authenticated WITH CHECK (true);
-CREATE POLICY "Admins full access to enquiries" ON public.enquiries FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Admins full access to enquiries" ON public.enquiries FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);
 
 -- 2. Membership Plans
 DROP POLICY IF EXISTS "Public read membership plans" ON public.membership_plans;
@@ -345,7 +358,7 @@ INSERT INTO public.gallery (title, category, image_url) VALUES
 ON CONFLICT DO NOTHING;
 
 -- 7. Seed Initial Enquiries
-INSERT INTO public.enquiries (name, email, phone, goal, preferred_date, preferred_time, message, type, status) VALUES
+INSERT INTO public.enquiries (name, email, phone, preferred_date, preferred_time, goal, message, type, status) VALUES
 ('Rahul Sharma', 'rahul.s@techcorp.io', '+91 98765 43210', CURRENT_DATE, '07:00 AM - 08:30 AM', 'Weight Loss', 'Interested in the 1-Day VIP Pass and body scan.', 'Free Trial', 'New'),
 ('Aman Verma', 'aman.v@fintech.co', '+91 97890 12345', CURRENT_DATE, '06:00 PM - 07:30 PM', 'Muscle Building', 'Looking for personal coach guidance on barbell lifts.', 'Free Trial', 'New'),
 ('Priya Das', 'priya.das@gmail.com', '+91 90123 45678', CURRENT_DATE - 1, '08:00 AM - 09:30 AM', 'General Fitness', 'Moving to Indiranagar next week, want to check the gym.', 'Free Trial', 'Contacted')
@@ -411,14 +424,19 @@ CREATE TABLE IF NOT EXISTS public.lead_followups (
 -- 13. FLOOR ATTENDANCE TABLE (Live Check-in & Biometrics)
 CREATE TABLE IF NOT EXISTS public.attendance (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     member_id TEXT NOT NULL,
     member_name TEXT NOT NULL,
     plan TEXT DEFAULT 'PRO',
-    check_in_time TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    check_out_time TIMESTAMP WITH TIME ZONE,
+    date DATE DEFAULT CURRENT_DATE,
+    check_in_time TEXT NOT NULL,
+    check_out_time TEXT,
     method TEXT DEFAULT 'Digital QR', -- 'Digital QR', 'Biometric Turnstile', 'Front Desk Manual'
     status TEXT DEFAULT 'Active'
 );
+
+ALTER TABLE public.attendance ADD COLUMN IF NOT EXISTS date DATE DEFAULT CURRENT_DATE;
+ALTER TABLE public.attendance ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 
 -- 14. INVOICES TABLE (GST Tax Invoices & Member Receipts)
 CREATE TABLE IF NOT EXISTS public.invoices (
@@ -426,19 +444,28 @@ CREATE TABLE IF NOT EXISTS public.invoices (
     invoice_number TEXT UNIQUE NOT NULL,
     member_id TEXT NOT NULL,
     member_name TEXT NOT NULL,
+    member_email TEXT,
+    member_phone TEXT,
     plan_name TEXT NOT NULL,
     duration TEXT DEFAULT '1 Year',
     subtotal NUMERIC NOT NULL,
+    discount NUMERIC DEFAULT 0,
     tax_rate NUMERIC DEFAULT 0.18,
     tax_amount NUMERIC NOT NULL,
     total_amount NUMERIC NOT NULL,
     payment_method TEXT DEFAULT 'UPI',
-    issue_date DATE DEFAULT CURRENT_DATE,
-    due_date DATE DEFAULT CURRENT_DATE,
+    issue_date TEXT DEFAULT CURRENT_DATE::text,
+    due_date TEXT DEFAULT CURRENT_DATE::text,
     status TEXT DEFAULT 'Paid',
+    transaction_id TEXT,
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS member_email TEXT;
+ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS member_phone TEXT;
+ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS discount NUMERIC DEFAULT 0;
+ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS transaction_id TEXT;
 
 -- 15. EXPENSES TABLE (Gym Facility Operational Expenses & P&L)
 CREATE TABLE IF NOT EXISTS public.expenses (
@@ -450,14 +477,19 @@ CREATE TABLE IF NOT EXISTS public.expenses (
     expense_date DATE DEFAULT CURRENT_DATE,
     vendor TEXT,
     notes TEXT,
+    description TEXT,
+    method TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS method TEXT;
 
 -- 16. MEMBER BODY PROGRESS TABLE (Transformation & Weigh-Ins)
 CREATE TABLE IF NOT EXISTS public.member_progress (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     member_id TEXT NOT NULL,
-    date DATE DEFAULT CURRENT_DATE,
+    date TEXT NOT NULL DEFAULT CURRENT_DATE::text,
     weight NUMERIC NOT NULL,
     body_fat NUMERIC,
     chest NUMERIC,
@@ -486,6 +518,14 @@ ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.member_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.class_bookings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admin full access leads" ON public.leads;
+DROP POLICY IF EXISTS "Admin full access lead_followups" ON public.lead_followups;
+DROP POLICY IF EXISTS "Admin full access attendance" ON public.attendance;
+DROP POLICY IF EXISTS "Admin full access invoices" ON public.invoices;
+DROP POLICY IF EXISTS "Admin full access expenses" ON public.expenses;
+DROP POLICY IF EXISTS "Full access member_progress" ON public.member_progress;
+DROP POLICY IF EXISTS "Full access class_bookings" ON public.class_bookings;
 
 CREATE POLICY "Admin full access leads" ON public.leads FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);
 CREATE POLICY "Admin full access lead_followups" ON public.lead_followups FOR ALL TO authenticated, anon USING (true) WITH CHECK (true);

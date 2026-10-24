@@ -135,7 +135,7 @@ export const getLeads = async () => {
         .from('leads')
         .select('*')
         .order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) return data;
+      if (!error && data) return data;
     }
   } catch (e) {
     console.warn('Supabase fetch leads failed, using local storage cache', e);

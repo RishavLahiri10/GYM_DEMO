@@ -284,8 +284,10 @@ export default function AdminDashboard({ isOpen, onClose }) {
     setIsDataLoading(true);
     try {
       // 1. Enquiries
-      const { data: enqData } = await supabase.from('enquiries').select('*');
-      if (enqData && enqData.length > 0) {
+      const { data: enqData, error: enqError } = await supabase.from('enquiries').select('*').order('created_at', { ascending: false });
+      if (!enqError && enqData && enqData.length > 0) {
+        setEnquiries(enqData);
+      } else if (!enqError && enqData && isSupabaseConfigured) {
         setEnquiries(enqData);
       } else {
         const stored = localStorage.getItem('kinetix_leads');
@@ -293,7 +295,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
       }
 
       // 2. Members & Fee Tracking
-      const { data: memData } = await supabase.from('members').select('*');
+      const { data: memData, error: memError } = await supabase.from('members').select('*');
       const initialMembers = [
         {
           id: 'mem-1',
@@ -386,7 +388,9 @@ export default function AdminDashboard({ isOpen, onClose }) {
           notes: 'Overdue by 15 days - Needs phone call'
         }
       ];
-      if (memData && memData.length > 0) {
+      if (!memError && memData && memData.length > 0) {
+        setMembers(memData);
+      } else if (!memError && memData && isSupabaseConfigured) {
         setMembers(memData);
       } else {
         const stored = localStorage.getItem('kinetix_table_members');
@@ -394,7 +398,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
       }
 
       // 2b. Member Monthly Payments Ledger
-      const { data: payData } = await supabase.from('member_payments').select('*');
+      const { data: payData, error: payError } = await supabase.from('member_payments').select('*');
       const initialPayments = [
         { id: 'pay-1', member_id: 'mem-1', month_year: '2026-08', month_name: 'August 2026', amount: 2499, payment_date: '2026-08-10', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-0801' },
         { id: 'pay-2', member_id: 'mem-1', month_year: '2026-09', month_name: 'September 2026', amount: 2499, payment_date: '2026-09-10', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-0901' },
@@ -409,7 +413,9 @@ export default function AdminDashboard({ isOpen, onClose }) {
         { id: 'pay-11', member_id: 'mem-5', month_year: '2026-08', month_name: 'August 2026', amount: 2499, payment_date: '2026-08-22', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-0805' },
         { id: 'pay-12', member_id: 'mem-5', month_year: '2026-09', month_name: 'September 2026', amount: 2499, payment_date: '2026-09-22', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-0905' }
       ];
-      if (payData && payData.length > 0) {
+      if (!payError && payData && payData.length > 0) {
+        setMemberPayments(payData);
+      } else if (!payError && payData && isSupabaseConfigured) {
         setMemberPayments(payData);
       } else {
         const storedPays = localStorage.getItem('kinetix_table_member_payments');
@@ -694,9 +700,17 @@ export default function AdminDashboard({ isOpen, onClose }) {
     }
 
     try {
-      await supabase.from('members').insert([memberObj]);
+      const { error: insErr } = await supabase.from('members').insert([memberObj]);
+      if (insErr) {
+        console.warn('Supabase member insertion note:', insErr);
+        if (insErr.message?.includes('fee_amount')) {
+          const { fee_amount: _fee_amount, ...legacyMember } = memberObj;
+          await supabase.from('members').insert([legacyMember]);
+        }
+      }
       if (initialPaymentObj) {
-        await supabase.from('member_payments').insert([initialPaymentObj]);
+        const { error: payErr } = await supabase.from('member_payments').insert([initialPaymentObj]);
+        if (payErr) console.warn('Supabase payment insertion note:', payErr);
       }
     } catch (err) {
       console.warn('Supabase member insertion note:', err);

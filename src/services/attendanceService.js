@@ -53,8 +53,8 @@ export const getAttendanceLogs = async () => {
       const { data, error } = await supabase
         .from('attendance')
         .select('*')
-        .order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) return data;
+        .order('check_in_time', { ascending: false });
+      if (!error && data) return data;
     }
   } catch (e) {}
 
