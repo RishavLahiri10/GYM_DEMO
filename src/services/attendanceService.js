@@ -1,51 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
-const INITIAL_ATTENDANCE = [
-  {
-    id: 'att-1',
-    member_id: 'mem-1',
-    member_name: 'Vikram Sharma',
-    plan: 'ELITE',
-    date: new Date().toISOString().slice(0, 10),
-    check_in_time: '06:15 AM',
-    check_out_time: '07:45 AM',
-    method: 'QR Pass',
-    status: 'Completed'
-  },
-  {
-    id: 'att-2',
-    member_id: 'mem-4',
-    member_name: 'Ananya Gupta',
-    plan: 'PRO',
-    date: new Date().toISOString().slice(0, 10),
-    check_in_time: '06:30 AM',
-    check_out_time: '07:30 AM',
-    method: 'QR Pass',
-    status: 'Completed'
-  },
-  {
-    id: 'att-3',
-    member_id: 'mem-2',
-    member_name: 'Priya Menon',
-    plan: 'PRO',
-    date: new Date().toISOString().slice(0, 10),
-    check_in_time: '08:00 AM',
-    check_out_time: null,
-    method: 'Manual Check-in',
-    status: 'On Floor (Active)'
-  },
-  {
-    id: 'att-4',
-    member_id: 'mem-5',
-    member_name: 'Sameer Joshi',
-    plan: 'ELITE',
-    date: new Date().toISOString().slice(0, 10),
-    check_in_time: '08:45 AM',
-    check_out_time: null,
-    method: 'QR Pass',
-    status: 'On Floor (Active)'
-  }
-];
+const INITIAL_ATTENDANCE = [];
 
 export const getAttendanceLogs = async () => {
   try {

@@ -1,20 +1,14 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
-const INITIAL_EXPENSES = [
-  { id: 'exp-1', category: 'Rent', amount: 125000, date: '2026-10-01', description: 'Facility lease (18,000 sq.ft Indiranagar building)', method: 'Bank Transfer' },
-  { id: 'exp-2', category: 'Salaries', amount: 85000, date: '2026-10-05', description: 'Trainers & cleaning staff monthly stipend', method: 'Direct Deposit' },
-  { id: 'exp-3', category: 'Electricity', amount: 18500, date: '2026-10-08', description: 'Commercial AC & lighting power utility', method: 'Auto Debit' },
-  { id: 'exp-4', category: 'Maintenance', amount: 9200, date: '2026-10-10', description: 'Eleiko barbell re-greasing & sauna servicing', method: 'UPI' },
-  { id: 'exp-5', category: 'Marketing', amount: 14000, date: '2026-10-12', description: 'Meta Ads & Indiranagar fitness campaign', method: 'Corporate Card' }
-];
+const INITIAL_EXPENSES = [];
 
 export const getExpenses = async () => {
   const stored = localStorage.getItem('kinetix_expenses');
   if (stored) {
     try { return JSON.parse(stored); } catch (e) {}
   }
-  localStorage.setItem('kinetix_expenses', JSON.stringify(INITIAL_EXPENSES));
-  return INITIAL_EXPENSES;
+  localStorage.setItem('kinetix_expenses', JSON.stringify([]));
+  return [];
 };
 
 export const saveExpense = async (expense) => {
@@ -74,28 +68,6 @@ export const getInvoices = async (memberId = null) => {
     const stored = localStorage.getItem('kinetix_invoices');
     if (stored) list = JSON.parse(stored);
   } catch (e) {}
-
-  if (list.length === 0) {
-    // Generate initial demo invoice
-    list = [
-      generateInvoice({
-        id: 'mem-1',
-        name: 'Vikram Sharma',
-        email: 'vikram.s@example.com',
-        phone: '+91 98765 11223',
-        plan: 'ELITE VIP',
-        fee_amount: 2499
-      }, { status: 'Paid', paymentMethod: 'UPI' }),
-      generateInvoice({
-        id: 'mem-2',
-        name: 'Priya Menon',
-        email: 'priya.m@example.com',
-        phone: '+91 98450 44332',
-        plan: 'PRO',
-        fee_amount: 1499
-      }, { status: 'Paid', paymentMethod: 'Card' })
-    ];
-  }
 
   if (memberId) {
     return list.filter(i => i.member_id === memberId);

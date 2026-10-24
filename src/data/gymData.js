@@ -528,38 +528,5 @@ export const FAQS_DATA = [
   }
 ];
 
-export const INITIAL_LEADS_DATA = [
-  {
-    id: "lead-1",
-    name: "Vikram Malhotra",
-    phone: "+91 98450 11223",
-    email: "vikram.m@techcorp.io",
-    goal: "Weight Loss",
-    time: "Early Morning (5:30 AM – 8:00 AM)",
-    message: "Looking to lose 10kg before year end. Want to check out the trial tomorrow morning.",
-    status: "New",
-    createdAt: "2026-10-14 08:30 AM"
-  },
-  {
-    id: "lead-2",
-    name: "Ayesha Khan",
-    phone: "+91 97312 88492",
-    email: "ayesha.k@gmail.com",
-    goal: "Personal Training",
-    time: "Evening (5:00 PM – 9:00 PM)",
-    message: "Recovering from a knee sprain. Need 1-on-1 trainer guidance.",
-    status: "Contacted",
-    createdAt: "2026-10-14 11:15 AM"
-  },
-  {
-    id: "lead-3",
-    name: "Rohan Deshmukh",
-    phone: "+91 99801 34567",
-    email: "rohan.d@fintech.co",
-    goal: "Strength",
-    time: "Mid-Day (11:00 AM – 4:00 PM)",
-    message: "Interested in the Elite Annual plan. Do you offer corporate discounts?",
-    status: "Trial Booked",
-    createdAt: "2026-10-13 04:45 PM"
-  }
-];
+export const INITIAL_LEADS_DATA = [];
+

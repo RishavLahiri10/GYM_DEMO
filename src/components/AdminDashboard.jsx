@@ -279,147 +279,84 @@ export default function AdminDashboard({ isOpen, onClose }) {
     }
   };
 
+  // Reset and wipe all demo/mock data to 0
+  const handleResetAllData = async () => {
+    if (!window.confirm('Reset all demo data to 0? This will wipe all mock records across Members, Monthly Payments, CRM Leads, Attendance, Invoices, Expenses, and Website Enquiries so you have a completely fresh slate for real testing.')) {
+      return;
+    }
+
+    const keysToReset = [
+      'kinetix_leads',
+      'kinetix_table_members',
+      'kinetix_table_member_payments',
+      'kinetix_crm_leads',
+      'kinetix_crm_followups',
+      'kinetix_attendance_logs',
+      'kinetix_expenses',
+      'kinetix_invoices'
+    ];
+    keysToReset.forEach(k => {
+      localStorage.removeItem(k);
+      localStorage.setItem(k, JSON.stringify([]));
+    });
+
+    if (isSupabaseConfigured) {
+      try {
+        await Promise.allSettled([
+          supabase.from('enquiries').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+          supabase.from('member_payments').delete().neq('id', ''),
+          supabase.from('members').delete().neq('id', ''),
+          supabase.from('leads').delete().neq('id', ''),
+          supabase.from('lead_followups').delete().neq('id', ''),
+          supabase.from('attendance').delete().neq('id', ''),
+          supabase.from('invoices').delete().neq('id', ''),
+          supabase.from('expenses').delete().neq('id', '')
+        ]);
+      } catch (err) {
+        console.warn('Supabase remote clear notice:', err);
+      }
+    }
+
+    setEnquiries([]);
+    setMembers([]);
+    setMemberPayments([]);
+
+    window.dispatchEvent(new Event('kinetix_crm_updated'));
+    window.dispatchEvent(new Event('kinetix_attendance_updated'));
+    window.dispatchEvent(new Event('kinetix_finance_updated'));
+
+    showToast('All data set to 0! Ready for real entries.');
+  };
+
   // Load All Tab Data from Supabase with graceful fallback
   const loadDashboardData = async () => {
     setIsDataLoading(true);
     try {
       // 1. Enquiries
       const { data: enqData, error: enqError } = await supabase.from('enquiries').select('*').order('created_at', { ascending: false });
-      if (!enqError && enqData && enqData.length > 0) {
-        setEnquiries(enqData);
-      } else if (!enqError && enqData && isSupabaseConfigured) {
+      if (!enqError && enqData) {
         setEnquiries(enqData);
       } else {
         const stored = localStorage.getItem('kinetix_leads');
-        setEnquiries(stored ? JSON.parse(stored) : INITIAL_LEADS_DATA);
+        setEnquiries(stored ? JSON.parse(stored) : []);
       }
 
       // 2. Members & Fee Tracking
       const { data: memData, error: memError } = await supabase.from('members').select('*');
-      const initialMembers = [
-        {
-          id: 'mem-1',
-          name: 'Vikram Sharma',
-          email: 'vikram.s@example.com',
-          phone: '+91 98765 11223',
-          plan: 'ELITE',
-          plan_duration: '1 Year',
-          fee_amount: 2499,
-          status: 'Active',
-          joined_date: '2025-08-10',
-          end_date: '2026-08-10',
-          last_paid_date: '2026-10-02',
-          next_due_date: '2026-11-10',
-          notes: 'Morning VIP training with Coach Arjun'
-        },
-        {
-          id: 'mem-2',
-          name: 'Priya Menon',
-          email: 'priya.m@example.com',
-          phone: '+91 98450 44332',
-          plan: 'PRO',
-          plan_duration: '6 Months',
-          fee_amount: 1499,
-          status: 'Upcoming',
-          joined_date: '2026-04-18',
-          end_date: '2026-10-18',
-          last_paid_date: '2026-09-18',
-          next_due_date: '2026-10-18',
-          notes: 'Fee due within 3 days - SMS reminder'
-        },
-        {
-          id: 'mem-3',
-          name: 'Rohan Kapoor',
-          email: 'rohan.k@example.com',
-          phone: '+91 97411 99881',
-          plan: 'BASIC',
-          plan_duration: '3 Months',
-          fee_amount: 999,
-          status: 'Overdue',
-          joined_date: '2026-07-05',
-          end_date: '2026-10-05',
-          last_paid_date: '2026-09-05',
-          next_due_date: '2026-10-05',
-          notes: 'Fee overdue by 10 days - WhatsApp follow up'
-        },
-        {
-          id: 'mem-4',
-          name: 'Ananya Gupta',
-          email: 'ananya.g@example.com',
-          phone: '+91 99002 77665',
-          plan: 'PRO',
-          plan_duration: '1 Year',
-          fee_amount: 1499,
-          status: 'Active',
-          joined_date: '2026-01-20',
-          end_date: '2027-01-20',
-          last_paid_date: '2026-10-01',
-          next_due_date: '2026-11-20',
-          notes: 'Evening strength and HIIT regular'
-        },
-        {
-          id: 'mem-5',
-          name: 'Sameer Joshi',
-          email: 'sameer.j@example.com',
-          phone: '+91 98220 33445',
-          plan: 'ELITE',
-          plan_duration: '1 Year',
-          fee_amount: 2499,
-          status: 'Upcoming',
-          joined_date: '2026-06-22',
-          end_date: '2027-06-22',
-          last_paid_date: '2026-09-22',
-          next_due_date: '2026-10-22',
-          notes: 'Upcoming renewal in 7 days'
-        },
-        {
-          id: 'mem-6',
-          name: 'Ayesha Khan',
-          email: 'ayesha.k@example.com',
-          phone: '+91 97312 88492',
-          plan: 'PRO',
-          plan_duration: '6 Months',
-          fee_amount: 1499,
-          status: 'Overdue',
-          joined_date: '2026-03-01',
-          end_date: '2026-09-01',
-          last_paid_date: '2026-08-30',
-          next_due_date: '2026-09-30',
-          notes: 'Overdue by 15 days - Needs phone call'
-        }
-      ];
-      if (!memError && memData && memData.length > 0) {
-        setMembers(memData);
-      } else if (!memError && memData && isSupabaseConfigured) {
+      if (!memError && memData) {
         setMembers(memData);
       } else {
         const stored = localStorage.getItem('kinetix_table_members');
-        setMembers(stored ? JSON.parse(stored) : initialMembers);
+        setMembers(stored ? JSON.parse(stored) : []);
       }
 
       // 2b. Member Monthly Payments Ledger
       const { data: payData, error: payError } = await supabase.from('member_payments').select('*');
-      const initialPayments = [
-        { id: 'pay-1', member_id: 'mem-1', month_year: '2026-08', month_name: 'August 2026', amount: 2499, payment_date: '2026-08-10', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-0801' },
-        { id: 'pay-2', member_id: 'mem-1', month_year: '2026-09', month_name: 'September 2026', amount: 2499, payment_date: '2026-09-10', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-0901' },
-        { id: 'pay-3', member_id: 'mem-1', month_year: '2026-10', month_name: 'October 2026', amount: 2499, payment_date: '2026-10-02', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-1001' },
-        { id: 'pay-4', member_id: 'mem-2', month_year: '2026-08', month_name: 'August 2026', amount: 1499, payment_date: '2026-08-18', payment_method: 'Card', status: 'Paid', receipt_no: 'REC-2026-0802' },
-        { id: 'pay-5', member_id: 'mem-2', month_year: '2026-09', month_name: 'September 2026', amount: 1499, payment_date: '2026-09-18', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-0902' },
-        { id: 'pay-6', member_id: 'mem-3', month_year: '2026-08', month_name: 'August 2026', amount: 999, payment_date: '2026-08-05', payment_method: 'Cash', status: 'Paid', receipt_no: 'REC-2026-0803' },
-        { id: 'pay-7', member_id: 'mem-3', month_year: '2026-09', month_name: 'September 2026', amount: 999, payment_date: '2026-09-05', payment_method: 'Cash', status: 'Paid', receipt_no: 'REC-2026-0903' },
-        { id: 'pay-8', member_id: 'mem-4', month_year: '2026-08', month_name: 'August 2026', amount: 1499, payment_date: '2026-08-20', payment_method: 'Net Banking', status: 'Paid', receipt_no: 'REC-2026-0804' },
-        { id: 'pay-9', member_id: 'mem-4', month_year: '2026-09', month_name: 'September 2026', amount: 1499, payment_date: '2026-09-20', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-0904' },
-        { id: 'pay-10', member_id: 'mem-4', month_year: '2026-10', month_name: 'October 2026', amount: 1499, payment_date: '2026-10-01', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-1002' },
-        { id: 'pay-11', member_id: 'mem-5', month_year: '2026-08', month_name: 'August 2026', amount: 2499, payment_date: '2026-08-22', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-0805' },
-        { id: 'pay-12', member_id: 'mem-5', month_year: '2026-09', month_name: 'September 2026', amount: 2499, payment_date: '2026-09-22', payment_method: 'UPI', status: 'Paid', receipt_no: 'REC-2026-0905' }
-      ];
-      if (!payError && payData && payData.length > 0) {
-        setMemberPayments(payData);
-      } else if (!payError && payData && isSupabaseConfigured) {
+      if (!payError && payData) {
         setMemberPayments(payData);
       } else {
         const storedPays = localStorage.getItem('kinetix_table_member_payments');
-        setMemberPayments(storedPays ? JSON.parse(storedPays) : initialPayments);
+        setMemberPayments(storedPays ? JSON.parse(storedPays) : []);
       }
 
       // 3. Plans
@@ -1110,6 +1047,18 @@ export default function AdminDashboard({ isOpen, onClose }) {
     return d.includes(todayDateStr) || e.status === 'New';
   }).length;
 
+  // Calculate Today's Attendance Check-Ins
+  const todayAttendanceCount = (() => {
+    try {
+      const logsRaw = localStorage.getItem('kinetix_attendance_logs');
+      if (logsRaw) {
+        const logs = JSON.parse(logsRaw);
+        return logs.filter(l => (l.date || '').includes(todayDateStr) || l.status?.includes('Active')).length;
+      }
+    } catch (e) {}
+    return 0;
+  })();
+
   // Filtered Enquiries
   const filteredEnquiries = enquiries.filter((item) => {
     const matchesSearch = 
@@ -1172,6 +1121,9 @@ export default function AdminDashboard({ isOpen, onClose }) {
               <>
                 <button onClick={loadDashboardData} className="admin-icon-btn" title="Refresh data from Supabase">
                   <RefreshCw size={14} className={isDataLoading ? 'animate-spin' : ''} />
+                </button>
+                <button onClick={handleResetAllData} className="admin-icon-btn" title="Reset & Wipe all demo data to 0" style={{ color: '#f59e0b' }}>
+                  <Trash2 size={14} />
                 </button>
                 <div className="admin-user-badge">
                   <span className="user-dot"></span>
@@ -1550,20 +1502,20 @@ export default function AdminDashboard({ isOpen, onClose }) {
                     <div className="aq-card" style={{ cursor: 'pointer', border: '1px solid rgba(204, 255, 0, 0.3)' }} onClick={() => setActiveTab('finance')}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span className="aq-val text-volt-accent" style={{ fontSize: '2.2rem' }}>
-                          ₹{(memberPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0) + 18500).toLocaleString()}
+                          ₹{(memberPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toLocaleString()}
                         </span>
                         <TrendingUp size={20} className="text-volt-accent" />
                       </div>
                       <span className="aq-lbl" style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>Monthly Revenue</span>
-                      <small style={{ color: '#34D399', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>
-                        +14.2% vs last month
+                      <small style={{ color: memberPayments.length > 0 ? '#34D399' : '#94A3B8', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>
+                        {memberPayments.length > 0 ? '+14.2% vs last month' : 'No revenue logged yet'}
                       </small>
                     </div>
 
                     {/* 3. CRM Leads */}
                     <div className="aq-card" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('crm')}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="aq-val" style={{ fontSize: '2.2rem' }}>{totalEnquiriesCount + 5}</span>
+                        <span className="aq-val" style={{ fontSize: '2.2rem' }}>{totalEnquiriesCount}</span>
                         <MessageSquare size={20} color="#38BDF8" />
                       </div>
                       <span className="aq-lbl" style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>Active Leads</span>
@@ -1575,12 +1527,12 @@ export default function AdminDashboard({ isOpen, onClose }) {
                     {/* 4. Floor Attendance */}
                     <div className="aq-card" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('attendance')}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="aq-val" style={{ fontSize: '2.2rem' }}>8</span>
+                        <span className="aq-val" style={{ fontSize: '2.2rem' }}>{todayAttendanceCount}</span>
                         <CheckCircle2 size={20} color="#10B981" />
                       </div>
                       <span className="aq-lbl" style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>Today's Check-Ins</span>
-                      <small style={{ color: '#10B981', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>
-                        Live floor turnstile synced
+                      <small style={{ color: todayAttendanceCount > 0 ? '#10B981' : '#94A3B8', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>
+                        {todayAttendanceCount > 0 ? 'Live floor turnstile synced' : 'No check-ins logged today'}
                       </small>
                     </div>
 
@@ -1608,46 +1560,63 @@ export default function AdminDashboard({ isOpen, onClose }) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                         <div>
                           <strong style={{ color: '#FFFFFF', fontSize: '0.94rem' }}>Monthly Revenue Trajectory (INR ₹)</strong>
-                          <span style={{ fontSize: '0.74rem', color: '#94A3B8', display: 'block' }}>Consistent upward trend across 2026</span>
+                          <span style={{ fontSize: '0.74rem', color: '#94A3B8', display: 'block' }}>
+                            {memberPayments.length > 0 ? 'Consistent upward trend across 2026' : 'Awaiting first fee payment'}
+                          </span>
                         </div>
                         <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--accent)', background: 'rgba(204, 255, 0, 0.1)', padding: '3px 8px', borderRadius: '4px' }}>
-                          +28% YTD
+                          {memberPayments.length > 0 ? '+28% YTD' : '₹0 Logged'}
                         </span>
                       </div>
 
                       {/* SVG Line Curve Chart */}
-                      <div style={{ width: '100%', height: '140px', position: 'relative' }}>
-                        <svg viewBox="0 0 500 140" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                          <defs>
-                            <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#CCFF00" stopOpacity="0.35" />
-                              <stop offset="100%" stopColor="#CCFF00" stopOpacity="0.0" />
-                            </linearGradient>
-                          </defs>
-                          {/* Grid Lines */}
-                          <line x1="0" y1="20" x2="500" y2="20" stroke="rgba(255, 255, 255, 0.05)" strokeDasharray="4" />
-                          <line x1="0" y1="60" x2="500" y2="60" stroke="rgba(255, 255, 255, 0.05)" strokeDasharray="4" />
-                          <line x1="0" y1="100" x2="500" y2="100" stroke="rgba(255, 255, 255, 0.05)" strokeDasharray="4" />
-                          
-                          {/* Area Fill */}
-                          <polygon 
-                            points="0,120 50,110 100,105 150,90 200,95 250,75 300,70 350,55 400,45 450,30 500,20 500,130 0,130" 
-                            fill="url(#revenueGrad)" 
-                          />
-                          {/* Trajectory Stroke */}
-                          <polyline 
-                            points="0,120 50,110 100,105 150,90 200,95 250,75 300,70 350,55 400,45 450,30 500,20" 
-                            fill="none" 
-                            stroke="var(--accent, #CCFF00)" 
-                            strokeWidth="3.5" 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                          />
-                          {/* Markers */}
-                          <circle cx="250" cy="75" r="4" fill="#0B0E15" stroke="var(--accent)" strokeWidth="2.5" />
-                          <circle cx="500" cy="20" r="5" fill="#CCFF00" stroke="#000" strokeWidth="2" />
-                        </svg>
-                      </div>
+                      {memberPayments.length > 0 ? (
+                        <div style={{ width: '100%', height: '140px', position: 'relative' }}>
+                          <svg viewBox="0 0 500 140" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                            <defs>
+                              <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#CCFF00" stopOpacity="0.35" />
+                                <stop offset="100%" stopColor="#CCFF00" stopOpacity="0.0" />
+                              </linearGradient>
+                            </defs>
+                            <line x1="0" y1="20" x2="500" y2="20" stroke="rgba(255, 255, 255, 0.05)" strokeDasharray="4" />
+                            <line x1="0" y1="60" x2="500" y2="60" stroke="rgba(255, 255, 255, 0.05)" strokeDasharray="4" />
+                            <line x1="0" y1="100" x2="500" y2="100" stroke="rgba(255, 255, 255, 0.05)" strokeDasharray="4" />
+                            <polygon 
+                              points="0,120 50,110 100,105 150,90 200,95 250,75 300,70 350,55 400,45 450,30 500,20 500,130 0,130" 
+                              fill="url(#revenueGrad)" 
+                            />
+                            <polyline 
+                              points="0,120 50,110 100,105 150,90 200,95 250,75 300,70 350,55 400,45 450,30 500,20" 
+                              fill="none" 
+                              stroke="var(--accent, #CCFF00)" 
+                              strokeWidth="3.5" 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                            />
+                            <circle cx="250" cy="75" r="4" fill="#0B0E15" stroke="var(--accent)" strokeWidth="2.5" />
+                            <circle cx="500" cy="20" r="5" fill="#CCFF00" stroke="#000" strokeWidth="2" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div style={{ 
+                          width: '100%', 
+                          height: '140px', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          border: '1px dashed rgba(255, 255, 255, 0.08)', 
+                          borderRadius: '8px', 
+                          color: '#64748b', 
+                          fontSize: '0.8rem',
+                          padding: '14px',
+                          textAlign: 'center'
+                        }}>
+                          <TrendingUp size={22} style={{ marginBottom: '6px', opacity: 0.4 }} />
+                          <span>₹0 Revenue logged. Trajectory curve will render here when member payments are recorded.</span>
+                        </div>
+                      )}
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748B', marginTop: '6px' }}>
                         <span>Jan</span>
@@ -1669,43 +1638,57 @@ export default function AdminDashboard({ isOpen, onClose }) {
                         <span style={{ fontSize: '0.72rem', color: '#38BDF8', fontWeight: 700 }}>{members.length} Members</span>
                       </div>
 
-                      {/* Tier Bars */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
-                            <span style={{ color: '#E2E8F0' }}>PRO Performance (₹1,499/mo)</span>
-                            <strong style={{ color: '#FFFFFF' }}>62%</strong>
-                          </div>
-                          <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ width: '62%', height: '100%', background: 'var(--accent, #CCFF00)', borderRadius: '4px' }} />
-                          </div>
-                        </div>
+                      {/* Dynamic Tier Bars */}
+                      {(() => {
+                        const totalMems = members.length;
+                        const proCount = members.filter(m => (m.plan || '').toUpperCase().includes('PRO')).length;
+                        const eliteCount = members.filter(m => (m.plan || '').toUpperCase().includes('ELITE')).length;
+                        const basicCount = members.filter(m => (m.plan || '').toUpperCase().includes('BASIC')).length;
+                        const proPercent = totalMems > 0 ? Math.round((proCount / totalMems) * 100) : 0;
+                        const elitePercent = totalMems > 0 ? Math.round((eliteCount / totalMems) * 100) : 0;
+                        const basicPercent = totalMems > 0 ? Math.round((basicCount / totalMems) * 100) : 0;
 
-                        <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
-                            <span style={{ color: '#E2E8F0' }}>ELITE VIP Coaching (₹2,499/mo)</span>
-                            <strong style={{ color: '#FFFFFF' }}>25%</strong>
-                          </div>
-                          <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ width: '25%', height: '100%', background: '#38BDF8', borderRadius: '4px' }} />
-                          </div>
-                        </div>
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
+                                <span style={{ color: '#E2E8F0' }}>PRO Performance (₹1,499/mo)</span>
+                                <strong style={{ color: '#FFFFFF' }}>{proPercent}%</strong>
+                              </div>
+                              <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ width: `${proPercent}%`, height: '100%', background: 'var(--accent, #CCFF00)', borderRadius: '4px' }} />
+                              </div>
+                            </div>
 
-                        <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
-                            <span style={{ color: '#E2E8F0' }}>BASIC Strength (₹999/mo)</span>
-                            <strong style={{ color: '#FFFFFF' }}>13%</strong>
-                          </div>
-                          <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ width: '13%', height: '100%', background: '#A855F7', borderRadius: '4px' }} />
-                          </div>
-                        </div>
-                      </div>
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
+                                <span style={{ color: '#E2E8F0' }}>ELITE VIP Coaching (₹2,499/mo)</span>
+                                <strong style={{ color: '#FFFFFF' }}>{elitePercent}%</strong>
+                              </div>
+                              <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ width: `${elitePercent}%`, height: '100%', background: '#38BDF8', borderRadius: '4px' }} />
+                              </div>
+                            </div>
 
-                      <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem' }}>
-                        <span style={{ color: '#94A3B8' }}>Avg. Member Retention:</span>
-                        <strong style={{ color: '#34D399' }}>9.4 Months</strong>
-                      </div>
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
+                                <span style={{ color: '#E2E8F0' }}>BASIC Strength (₹999/mo)</span>
+                                <strong style={{ color: '#FFFFFF' }}>{basicPercent}%</strong>
+                              </div>
+                              <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ width: `${basicPercent}%`, height: '100%', background: '#A855F7', borderRadius: '4px' }} />
+                              </div>
+                            </div>
+
+                            <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem' }}>
+                              <span style={{ color: '#94A3B8' }}>Avg. Member Retention:</span>
+                              <strong style={{ color: totalMems > 0 ? '#34D399' : '#64748B' }}>
+                                {totalMems > 0 ? '9.4 Months' : '0 Months (Fresh Start)'}
+                              </strong>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                   </div>
@@ -1764,6 +1747,14 @@ export default function AdminDashboard({ isOpen, onClose }) {
                       >
                         <Plus size={14} /> + Add Trainer
                       </button>
+                      <button 
+                        onClick={handleResetAllData}
+                        className="btn btn-secondary btn-sm"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.35)' }}
+                        title="Wipe and clear all test data to start completely fresh"
+                      >
+                        <Trash2 size={14} /> Reset All Data to 0
+                      </button>
                     </div>
                   </div>
 
@@ -1795,30 +1786,38 @@ export default function AdminDashboard({ isOpen, onClose }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {enquiries.slice(0, 5).map((e) => (
-                            <tr key={e.id}>
-                              <td><strong style={{ color: '#fff' }}>{e.name}</strong></td>
-                              <td>{e.phone}</td>
-                              <td><span className="lead-goal-chip">{e.goal || 'General Fitness'}</span></td>
-                              <td><small>{e.preferred_date || 'Today'}</small></td>
-                              <td>
-                                <span className={`status-select status-${(e.status || 'new').toLowerCase().replace(' ', '-')}`} style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '4px', fontSize: '0.75rem' }}>
-                                  {e.status || 'New'}
-                                </span>
-                              </td>
-                              <td>
-                                <a
-                                  href={`https://wa.me/91${(e.phone || '').replace(/[^0-9]/g, '')}?text=Hi%20${encodeURIComponent(e.name || '')},%20this%20is%20KINETIX%20Athletic%20Club.`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="table-action-icon wa-act"
-                                  title="WhatsApp"
-                                >
-                                  <MessageSquare size={13} />
-                                </a>
+                          {enquiries.length === 0 ? (
+                            <tr>
+                              <td colSpan="6" style={{ textAlign: 'center', padding: '28px', color: '#64748b' }}>
+                                No enquiries yet. Submissions from the website contact &amp; trial forms will appear here in real time.
                               </td>
                             </tr>
-                          ))}
+                          ) : (
+                            enquiries.slice(0, 5).map((e) => (
+                              <tr key={e.id}>
+                                <td><strong style={{ color: '#fff' }}>{e.name}</strong></td>
+                                <td>{e.phone}</td>
+                                <td><span className="lead-goal-chip">{e.goal || 'General Fitness'}</span></td>
+                                <td><small>{e.preferred_date || 'Today'}</small></td>
+                                <td>
+                                  <span className={`status-select status-${(e.status || 'new').toLowerCase().replace(' ', '-')}`} style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '4px', fontSize: '0.75rem' }}>
+                                    {e.status || 'New'}
+                                  </span>
+                                </td>
+                                <td>
+                                  <a
+                                    href={`https://wa.me/91${(e.phone || '').replace(/[^0-9]/g, '')}?text=Hi%20${encodeURIComponent(e.name || '')},%20this%20is%20KINETIX%20Athletic%20Club.`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="table-action-icon wa-act"
+                                    title="WhatsApp"
+                                  >
+                                    <MessageSquare size={13} />
+                                  </a>
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
