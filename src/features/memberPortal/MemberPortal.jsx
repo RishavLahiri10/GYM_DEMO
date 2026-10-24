@@ -37,9 +37,9 @@ export default function MemberPortal({ isOpen, onClose, memberUser, onSwitchToPu
   const [activeTab, setActiveTab] = useState('home'); // 'home' | 'workout' | 'diet' | 'progress' | 'classes' | 'billing' | 'pass'
   const [workout, setWorkout] = useState(DEFAULT_WORKOUT_PLAN);
   const [progressData, setProgressData] = useState(getMemberProgress());
-  const [attendanceStats, setAttendanceStats] = useState({ totalSessions: 18, thisMonthSessions: 8, streak: 12 });
+  const [attendanceStats, setAttendanceStats] = useState({ totalSessions: 0, thisMonthSessions: 0, streak: 0 });
   const [invoices, setInvoices] = useState([]);
-  const [myBookedClasses, setMyBookedClasses] = useState(['Strength & Power (Monday 06:00 AM)']);
+  const [myBookedClasses, setMyBookedClasses] = useState([]);
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [newWeight, setNewWeight] = useState('');
   const [newBodyFat, setNewBodyFat] = useState('');
@@ -539,28 +539,39 @@ export default function MemberPortal({ isOpen, onClose, memberUser, onSwitchToPu
                 </div>
 
                 {/* Metric Summary Cards */}
-                <div className="mp-stats-grid">
-                  <div className="mp-stat-card">
-                    <span>STARTING WEIGHT</span>
-                    <strong>88.5 KG</strong>
-                    <p className="mps-sub">Aug 10, 2025</p>
-                  </div>
-                  <div className="mp-stat-card">
-                    <span>LATEST WEIGHT</span>
-                    <strong className="text-volt">81.2 KG</strong>
-                    <p className="mps-sub text-success">-7.3 KG Net Loss</p>
-                  </div>
-                  <div className="mp-stat-card">
-                    <span>BODY FAT %</span>
-                    <strong>18.4%</strong>
-                    <p className="mps-sub text-success">-5.8% drop</p>
-                  </div>
-                  <div className="mp-stat-card">
-                    <span>WAIST REDUCTION</span>
-                    <strong>83 CM</strong>
-                    <p className="mps-sub text-success">-11 CM trimmed</p>
-                  </div>
-                </div>
+                {(() => {
+                  const startRec = progressData.length > 0 ? progressData[0] : null;
+                  const latestRec = progressData.length > 0 ? progressData[progressData.length - 1] : null;
+                  const weightDiff = (startRec && latestRec && progressData.length > 1)
+                    ? (latestRec.weight - startRec.weight).toFixed(1)
+                    : null;
+                  return (
+                    <div className="mp-stats-grid">
+                      <div className="mp-stat-card">
+                        <span>STARTING WEIGHT</span>
+                        <strong>{startRec ? `${startRec.weight} KG` : '--'}</strong>
+                        <p className="mps-sub">{startRec ? startRec.date : 'No entry yet'}</p>
+                      </div>
+                      <div className="mp-stat-card">
+                        <span>LATEST WEIGHT</span>
+                        <strong className="text-volt">{latestRec ? `${latestRec.weight} KG` : '--'}</strong>
+                        <p className={`mps-sub ${weightDiff && Number(weightDiff) < 0 ? 'text-success' : ''}`}>
+                          {weightDiff ? `${weightDiff > 0 ? '+' : ''}${weightDiff} KG Change` : 'Current Baseline'}
+                        </p>
+                      </div>
+                      <div className="mp-stat-card">
+                        <span>BODY FAT %</span>
+                        <strong>{latestRec?.bodyFat ? `${latestRec.bodyFat}%` : '--'}</strong>
+                        <p className="mps-sub">Measured composition</p>
+                      </div>
+                      <div className="mp-stat-card">
+                        <span>WAIST</span>
+                        <strong>{latestRec?.waist ? `${latestRec.waist} CM` : '--'}</strong>
+                        <p className="mps-sub">Circumference</p>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* History Table */}
                 <div className="mp-card mp-table-card">
@@ -580,16 +591,24 @@ export default function MemberPortal({ isOpen, onClose, memberUser, onSwitchToPu
                         </tr>
                       </thead>
                       <tbody>
-                        {progressData.map((row, idx) => (
-                          <tr key={idx}>
-                            <td><strong>{row.date}</strong></td>
-                            <td className="text-volt font-bold">{row.weight} kg</td>
-                            <td>{row.bodyFat}%</td>
-                            <td>{row.chest} cm</td>
-                            <td>{row.waist} cm</td>
-                            <td>{row.arms} cm</td>
+                        {progressData.length === 0 ? (
+                          <tr>
+                            <td colSpan="6" style={{ textAlign: 'center', padding: '36px 16px', color: '#64748B' }}>
+                              No measurement logs yet. Click 'Log New Weigh-In' above to record your first stats.
+                            </td>
                           </tr>
-                        ))}
+                        ) : (
+                          progressData.map((row, idx) => (
+                            <tr key={idx}>
+                              <td><strong>{row.date}</strong></td>
+                              <td className="text-volt font-bold">{row.weight} kg</td>
+                              <td>{row.bodyFat ? `${row.bodyFat}%` : '--'}</td>
+                              <td>{row.chest ? `${row.chest} cm` : '--'}</td>
+                              <td>{row.waist ? `${row.waist} cm` : '--'}</td>
+                              <td>{row.arms ? `${row.arms} cm` : '--'}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>

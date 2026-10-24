@@ -237,57 +237,68 @@ export default function AttendanceDesk({ members = [], showToast }) {
               </tr>
             </thead>
             <tbody>
-              {todayLogs.map((log) => (
-                <tr key={log.id}>
-                  <td>
-                    <strong style={{ color: '#FFFFFF', fontSize: '0.88rem' }}>{log.member_name}</strong>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: '0.72rem', background: 'rgba(255, 255, 255, 0.05)', padding: '2px 8px', borderRadius: '4px', color: '#CBD5E1' }}>
-                      {log.plan || 'PRO'}
-                    </span>
-                  </td>
-                  <td>
-                    <span style={{ color: 'var(--accent, #CCFF00)', fontWeight: 700, fontSize: '0.82rem' }}>
-                      {log.check_in_time}
-                    </span>
-                  </td>
-                  <td>
-                    <span style={{ color: log.check_out_time ? '#94A3B8' : '#F59E0B', fontSize: '0.82rem' }}>
-                      {log.check_out_time || 'Currently Training'}
-                    </span>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: '0.76rem', color: '#CBD5E1' }}>{log.method}</span>
-                  </td>
-                  <td>
-                    <span style={{
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      background: log.status.includes('Active') ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.06)',
-                      color: log.status.includes('Active') ? '#10B981' : '#94A3B8'
-                    }}>
-                      {log.status}
-                    </span>
-                  </td>
-                  <td>
-                    {log.status.includes('Active') ? (
-                      <button
-                        onClick={() => handlePunchOut(log.id, log.member_name)}
-                        className="btn btn-secondary btn-sm"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem', padding: '4px 10px' }}
-                      >
-                        <LogOut size={13} />
-                        <span>Punch Out</span>
-                      </button>
-                    ) : (
-                      <span style={{ fontSize: '0.72rem', color: '#64748B' }}>Finished</span>
-                    )}
+              {todayLogs.length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '36px 16px', color: '#64748B' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <Clock size={24} style={{ opacity: 0.4 }} />
+                      <span>No check-ins logged today. Real member check-ins will appear here as they scan QR or check in.</span>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                todayLogs.map((log) => (
+                  <tr key={log.id}>
+                    <td>
+                      <strong style={{ color: '#FFFFFF', fontSize: '0.88rem' }}>{log.member_name}</strong>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255, 255, 255, 0.05)', padding: '2px 8px', borderRadius: '4px', color: '#CBD5E1' }}>
+                        {log.plan || 'PRO'}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ color: 'var(--accent, #CCFF00)', fontWeight: 700, fontSize: '0.82rem' }}>
+                        {log.check_in_time}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ color: log.check_out_time ? '#94A3B8' : '#F59E0B', fontSize: '0.82rem' }}>
+                        {log.check_out_time || 'Currently Training'}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.76rem', color: '#CBD5E1' }}>{log.method}</span>
+                    </td>
+                    <td>
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: log.status.includes('Active') ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.06)',
+                        color: log.status.includes('Active') ? '#10B981' : '#94A3B8'
+                      }}>
+                        {log.status}
+                      </span>
+                    </td>
+                    <td>
+                      {log.status.includes('Active') ? (
+                        <button
+                          onClick={() => handlePunchOut(log.id, log.member_name)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem', padding: '4px 10px' }}
+                        >
+                          <LogOut size={13} />
+                          <span>Punch Out</span>
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '0.72rem', color: '#64748B' }}>Finished</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

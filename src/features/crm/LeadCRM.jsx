@@ -263,7 +263,14 @@ export default function LeadCRM({ onConvertToMember, showToast }) {
             </tr>
           </thead>
           <tbody>
-            {filteredLeads.map((lead) => (
+            {filteredLeads.length === 0 ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '36px 16px', color: '#64748B' }}>
+                  No CRM leads found. Click <strong>+ Add New Lead</strong> to log your first prospect.
+                </td>
+              </tr>
+            ) : (
+              filteredLeads.map((lead) => (
               <tr key={lead.id}>
                 <td>
                   <strong style={{ color: '#FFFFFF', fontSize: '0.9rem' }}>{lead.name}</strong>
@@ -351,7 +358,7 @@ export default function LeadCRM({ onConvertToMember, showToast }) {
                   </div>
                 </td>
               </tr>
-            ))}
+            )))}
           </tbody>
         </table>
       </div>

@@ -112,20 +112,17 @@ export const DEFAULT_DIET_PLAN = {
   ]
 };
 
-export const DEFAULT_PROGRESS_HISTORY = [
-  { date: 'Aug 10', weight: 88.5, bodyFat: 24.2, chest: 104, waist: 94, arms: 36 },
-  { date: 'Sep 10', weight: 85.0, bodyFat: 21.5, chest: 105, waist: 90, arms: 37 },
-  { date: 'Oct 01', weight: 82.8, bodyFat: 19.8, chest: 106, waist: 86, arms: 37.5 },
-  { date: 'Oct 15', weight: 81.2, bodyFat: 18.4, chest: 107, waist: 83, arms: 38 }
-];
+export const DEFAULT_PROGRESS_HISTORY = [];
 
 export const getMemberProgress = () => {
   const stored = localStorage.getItem('kinetix_member_progress');
   if (stored) {
-    try { return JSON.parse(stored); } catch (e) {}
+    try { 
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {}
   }
-  localStorage.setItem('kinetix_member_progress', JSON.stringify(DEFAULT_PROGRESS_HISTORY));
-  return DEFAULT_PROGRESS_HISTORY;
+  return [];
 };
 
 export const saveProgressEntry = (entry) => {

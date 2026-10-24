@@ -293,7 +293,9 @@ export default function AdminDashboard({ isOpen, onClose }) {
       'kinetix_crm_followups',
       'kinetix_attendance_logs',
       'kinetix_expenses',
-      'kinetix_invoices'
+      'kinetix_invoices',
+      'kinetix_member_progress',
+      'kinetix_booked_classes'
     ];
     keysToReset.forEach(k => {
       localStorage.removeItem(k);
@@ -310,7 +312,9 @@ export default function AdminDashboard({ isOpen, onClose }) {
           supabase.from('lead_followups').delete().neq('id', ''),
           supabase.from('attendance').delete().neq('id', ''),
           supabase.from('invoices').delete().neq('id', ''),
-          supabase.from('expenses').delete().neq('id', '')
+          supabase.from('expenses').delete().neq('id', ''),
+          supabase.from('member_progress').delete().neq('id', ''),
+          supabase.from('class_bookings').delete().neq('id', '')
         ]);
       } catch (err) {
         console.warn('Supabase remote clear notice:', err);
@@ -324,6 +328,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
     window.dispatchEvent(new Event('kinetix_crm_updated'));
     window.dispatchEvent(new Event('kinetix_attendance_updated'));
     window.dispatchEvent(new Event('kinetix_finance_updated'));
+    window.dispatchEvent(new Event('kinetix_progress_updated'));
 
     showToast('All data set to 0! Ready for real entries.');
   };
@@ -1905,7 +1910,14 @@ export default function AdminDashboard({ isOpen, onClose }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredEnquiries.map((lead) => (
+                        {filteredEnquiries.length === 0 ? (
+                          <tr>
+                            <td colSpan="7" style={{ textAlign: 'center', padding: '36px 16px', color: '#64748b' }}>
+                              No enquiries found. All submissions from the website contact &amp; trial forms will appear here in real time.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredEnquiries.map((lead) => (
                           <tr key={lead.id}>
                             <td><strong style={{ color: '#fff' }}>{lead.name}</strong></td>
                             <td>
@@ -1954,7 +1966,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
                               </div>
                             </td>
                           </tr>
-                        ))}
+                        )))}
                       </tbody>
                     </table>
                   </div>

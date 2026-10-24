@@ -197,48 +197,59 @@ export default function FinanceDesk({ members = [], memberPayments = [], showToa
               </tr>
             </thead>
             <tbody>
-              {invoices.map((inv) => (
-                <tr key={inv.id}>
-                  <td>
-                    <strong style={{ color: '#FFFFFF', fontSize: '0.86rem' }}>{inv.invoice_number}</strong>
-                  </td>
-                  <td>
-                    <div style={{ color: '#FFFFFF', fontWeight: 600 }}>{inv.member_name}</div>
-                    <small style={{ color: '#94A3B8' }}>{inv.member_phone}</small>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: '0.72rem', background: 'rgba(255, 255, 255, 0.05)', padding: '2px 8px', borderRadius: '4px', color: '#CBD5E1' }}>
-                      {inv.plan_name}
-                    </span>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>{inv.issue_date}</span>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: '0.82rem', color: '#CBD5E1' }}>₹{inv.tax_amount}</span>
-                  </td>
-                  <td>
-                    <strong style={{ color: 'var(--accent, #CCFF00)', fontSize: '0.9rem' }}>
-                      ₹{inv.total_amount ? inv.total_amount.toLocaleString() : '1,769'}
-                    </strong>
-                  </td>
-                  <td>
-                    <span className="badge-paid" style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800, background: 'rgba(16, 185, 129, 0.15)', color: '#34D399' }}>
-                      {inv.status || 'Paid'}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      onClick={() => setSelectedInvoiceForView(inv)}
-                      className="btn btn-secondary btn-sm"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.74rem', padding: '4px 10px' }}
-                    >
-                      <FileText size={13} />
-                      <span>View &amp; Print</span>
-                    </button>
+              {invoices.length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '36px 16px', color: '#64748B' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <FileText size={24} style={{ opacity: 0.4 }} />
+                      <span>No invoices generated yet. Invoices are automatically generated when members enroll or renew.</span>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                invoices.map((inv) => (
+                  <tr key={inv.id}>
+                    <td>
+                      <strong style={{ color: '#FFFFFF', fontSize: '0.86rem' }}>{inv.invoice_number}</strong>
+                    </td>
+                    <td>
+                      <div style={{ color: '#FFFFFF', fontWeight: 600 }}>{inv.member_name}</div>
+                      <small style={{ color: '#94A3B8' }}>{inv.member_phone}</small>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255, 255, 255, 0.05)', padding: '2px 8px', borderRadius: '4px', color: '#CBD5E1' }}>
+                        {inv.plan_name}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>{inv.issue_date}</span>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.82rem', color: '#CBD5E1' }}>₹{inv.tax_amount}</span>
+                    </td>
+                    <td>
+                      <strong style={{ color: 'var(--accent, #CCFF00)', fontSize: '0.9rem' }}>
+                        ₹{inv.total_amount ? inv.total_amount.toLocaleString() : '0'}
+                      </strong>
+                    </td>
+                    <td>
+                      <span className="badge-paid" style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800, background: 'rgba(16, 185, 129, 0.15)', color: '#34D399' }}>
+                        {inv.status || 'Paid'}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => setSelectedInvoiceForView(inv)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.74rem', padding: '4px 10px' }}
+                      >
+                        <FileText size={13} />
+                        <span>View &amp; Print</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -258,36 +269,47 @@ export default function FinanceDesk({ members = [], memberPayments = [], showToa
               </tr>
             </thead>
             <tbody>
-              {expenses.map((exp) => (
-                <tr key={exp.id}>
-                  <td>
-                    <span style={{ 
-                      fontSize: '0.74rem', 
-                      fontWeight: 800, 
-                      padding: '3px 10px', 
-                      borderRadius: '4px',
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      color: '#E2E8F0'
-                    }}>
-                      {exp.category}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ color: '#FFFFFF', fontSize: '0.86rem' }}>{exp.description}</div>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>{exp.date}</span>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: '0.8rem', color: '#CBD5E1' }}>{exp.method || 'Bank Transfer'}</span>
-                  </td>
-                  <td>
-                    <strong style={{ color: '#F87171', fontSize: '0.9rem' }}>
-                      -₹{exp.amount.toLocaleString()}
-                    </strong>
+              {expenses.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '36px 16px', color: '#64748B' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <Receipt size={24} style={{ opacity: 0.4 }} />
+                      <span>No facility expenses logged yet. Click "+ Log Expense" above to record gym operating costs.</span>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                expenses.map((exp) => (
+                  <tr key={exp.id}>
+                    <td>
+                      <span style={{ 
+                        fontSize: '0.74rem', 
+                        fontWeight: 800, 
+                        padding: '3px 10px', 
+                        borderRadius: '4px',
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        color: '#E2E8F0'
+                      }}>
+                        {exp.category}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ color: '#FFFFFF', fontSize: '0.86rem' }}>{exp.description}</div>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>{exp.date}</span>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.8rem', color: '#CBD5E1' }}>{exp.method || 'Bank Transfer'}</span>
+                    </td>
+                    <td>
+                      <strong style={{ color: '#F87171', fontSize: '0.9rem' }}>
+                        -₹{exp.amount.toLocaleString()}
+                      </strong>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -302,23 +324,29 @@ export default function FinanceDesk({ members = [], memberPayments = [], showToa
               Operating Expense Distribution
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {EXPENSE_CATEGORIES.map((cat) => {
-                const catTotal = expenses.filter(e => e.category === cat).reduce((s, e) => s + (e.amount || 0), 0);
-                if (catTotal === 0) return null;
-                const pct = totalExpenses > 0 ? Math.round((catTotal / totalExpenses) * 100) : 0;
+              {expenses.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#64748B', fontSize: '0.85rem' }}>
+                  No expense records logged yet. Distribution will show here once costs are entered.
+                </div>
+              ) : (
+                EXPENSE_CATEGORIES.map((cat) => {
+                  const catTotal = expenses.filter(e => e.category === cat).reduce((s, e) => s + (e.amount || 0), 0);
+                  if (catTotal === 0) return null;
+                  const pct = totalExpenses > 0 ? Math.round((catTotal / totalExpenses) * 100) : 0;
 
-                return (
-                  <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                      <span style={{ color: '#CBD5E1' }}>{cat}</span>
-                      <strong style={{ color: '#FFFFFF' }}>₹{catTotal.toLocaleString()} ({pct}%)</strong>
+                  return (
+                    <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                        <span style={{ color: '#CBD5E1' }}>{cat}</span>
+                        <strong style={{ color: '#FFFFFF' }}>₹{catTotal.toLocaleString()} ({pct}%)</strong>
+                      </div>
+                      <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: 'var(--accent, #CCFF00)', borderRadius: '3px' }} />
+                      </div>
                     </div>
-                    <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: 'var(--accent, #CCFF00)', borderRadius: '3px' }} />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 
