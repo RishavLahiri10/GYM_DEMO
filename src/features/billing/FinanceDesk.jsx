@@ -117,10 +117,10 @@ export default function FinanceDesk({ members = [], memberPayments = [], showToa
       </div>
 
       {/* Financial Executive Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+      <div className="finance-kpi-grid">
         <div className="aq-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="aq-val text-volt-accent" style={{ fontSize: '2.2rem' }}>
+            <span className="aq-val text-volt-accent">
               ₹{totalRevenue.toLocaleString()}
             </span>
             <TrendingUp size={22} className="text-volt-accent" />
@@ -133,7 +133,7 @@ export default function FinanceDesk({ members = [], memberPayments = [], showToa
 
         <div className="aq-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="aq-val text-danger" style={{ fontSize: '2.2rem', color: '#F87171' }}>
+            <span className="aq-val text-danger" style={{ color: '#F87171' }}>
               ₹{totalExpenses.toLocaleString()}
             </span>
             <TrendingDown size={22} color="#F87171" />
@@ -146,7 +146,7 @@ export default function FinanceDesk({ members = [], memberPayments = [], showToa
 
         <div className="aq-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="aq-val" style={{ fontSize: '2.2rem', color: netProfit >= 0 ? '#34D399' : '#F87171' }}>
+            <span className="aq-val" style={{ color: netProfit >= 0 ? '#34D399' : '#F87171' }}>
               ₹{netProfit.toLocaleString()}
             </span>
             <DollarSign size={22} color={netProfit >= 0 ? '#34D399' : '#F87171'} />
@@ -159,7 +159,7 @@ export default function FinanceDesk({ members = [], memberPayments = [], showToa
       </div>
 
       {/* Sub Tabs: Summary / Invoices / Expenses */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px', marginBottom: '20px' }}>
+      <div className="finance-subtabs-row">
         <button 
           onClick={() => setActiveSubTab('summary')}
           className={`btn ${activeSubTab === 'summary' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
@@ -317,7 +317,7 @@ export default function FinanceDesk({ members = [], memberPayments = [], showToa
 
       {/* SUBTAB 3: SUMMARY */}
       {activeSubTab === 'summary' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px' }}>
+        <div className="finance-summary-grid">
           {/* Expense Categories Breakdown */}
           <div style={{ background: '#121622', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '20px' }}>
             <h4 style={{ color: '#FFFFFF', fontSize: '1rem', margin: '0 0 16px 0', fontWeight: 700 }}>

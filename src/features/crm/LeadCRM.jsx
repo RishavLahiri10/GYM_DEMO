@@ -141,7 +141,7 @@ export default function LeadCRM({ onConvertToMember, showToast }) {
       </div>
 
       {/* KPI Pipeline Ribbon */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '22px' }}>
+      <div className="crm-pipeline-ribbon">
         {['ALL', ...LEAD_STATUSES].map((st) => {
           const count = st === 'ALL' ? leads.length : leads.filter(l => l.status === st).length;
           const isActive = statusFilter === st;
@@ -186,7 +186,7 @@ export default function LeadCRM({ onConvertToMember, showToast }) {
               Pending Follow-Up Tasks ({followups.filter(f => f.status === 'Pending').length})
             </strong>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+          <div className="crm-followups-grid">
             {followups.filter(f => f.status === 'Pending').map((fu) => (
               <div key={fu.id} style={{
                 background: '#0E1119',

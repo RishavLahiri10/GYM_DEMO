@@ -1099,9 +1099,12 @@ export default function AdminDashboard({ isOpen, onClose }) {
               <Dumbbell size={18} className="text-volt-accent" />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 className="admin-title">KINETIX ATHLETIC CLUB</h2>
-                <span style={{ 
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
+                <h2 className="admin-title">
+                  <span className="admin-title-full">KINETIX ATHLETIC CLUB</span>
+                  <span className="admin-title-short">KINETIX</span>
+                </h2>
+                <span className="admin-db-pill" style={{ 
                   background: isSupabaseConfigured ? 'rgba(16, 185, 129, 0.15)' : 'rgba(234, 179, 8, 0.15)',
                   color: isSupabaseConfigured ? '#34d399' : '#facc15',
                   border: isSupabaseConfigured ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(234, 179, 8, 0.3)',
@@ -1111,10 +1114,12 @@ export default function AdminDashboard({ isOpen, onClose }) {
                   fontWeight: 700,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '4px',
+                  flexShrink: 0
                 }}>
                   <Database size={10} />
-                  {isSupabaseConfigured ? 'Supabase Live' : 'Demo Local Sync'}
+                  <span className="admin-db-text-full">{isSupabaseConfigured ? 'Supabase Live' : 'Demo Local Sync'}</span>
+                  <span className="admin-db-text-short">{isSupabaseConfigured ? 'Live' : 'Local'}</span>
                 </span>
               </div>
               <span className="admin-subtitle">Gym Management System &amp; PostgreSQL Operations Hub</span>
@@ -1130,9 +1135,9 @@ export default function AdminDashboard({ isOpen, onClose }) {
                 <button onClick={handleResetAllData} className="admin-icon-btn" title="Reset & Wipe all demo data to 0" style={{ color: '#f59e0b' }}>
                   <Trash2 size={14} />
                 </button>
-                <div className="admin-user-badge">
+                <div className="admin-user-badge" title={adminUser.email || 'Admin'}>
                   <span className="user-dot"></span>
-                  <span>{adminUser.email || 'Admin'}</span>
+                  <span className="admin-user-email">{adminUser.email || 'Admin'}</span>
                 </div>
                 <button 
                   onClick={handleAdminLogout} 
@@ -1263,9 +1268,9 @@ export default function AdminDashboard({ isOpen, onClose }) {
           <div className="admin-workspace-layout">
             
             {/* Sidebar Navigation */}
-            <aside className="admin-sidebar-nav" style={{ width: '250px' }}>
+            <aside className="admin-sidebar-nav">
               <div className="sidebar-group">
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.08em', padding: '4px 12px 6px' }}>
+                <span className="sidebar-group-header">
                   BUSINESS OPERATIONS
                 </span>
 
@@ -1348,7 +1353,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
                   </span>
                 </button>
 
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.08em', padding: '12px 12px 6px' }}>
+                <span className="sidebar-group-header">
                   WEBSITE CONTENT (CMS)
                 </span>
 
@@ -1430,7 +1435,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
                   <span className="sni-badge">{schedule.length}</span>
                 </button>
 
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.08em', padding: '12px 12px 6px' }}>
+                <span className="sidebar-group-header">
                   SETTINGS &amp; THEME
                 </span>
 
@@ -1489,12 +1494,12 @@ export default function AdminDashboard({ isOpen, onClose }) {
                   </div>
 
                   {/* Commercial Executive KPI Cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+                  <div className="admin-kpi-grid">
                     
                     {/* 1. Members */}
                     <div className="aq-card" style={{ cursor: 'pointer', border: '1px solid rgba(255, 255, 255, 0.1)' }} onClick={() => setActiveTab('members')}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="aq-val" style={{ fontSize: '2.2rem' }}>{members.length}</span>
+                        <span className="aq-val">{members.length}</span>
                         <Users size={20} color="var(--accent)" />
                       </div>
                       <span className="aq-lbl" style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>Total Members</span>
@@ -1504,9 +1509,9 @@ export default function AdminDashboard({ isOpen, onClose }) {
                     </div>
 
                     {/* 2. Monthly Revenue */}
-                    <div className="aq-card" style={{ cursor: 'pointer', border: '1px solid rgba(204, 255, 0, 0.3)' }} onClick={() => setActiveTab('finance')}>
+                    <div className="aq-card aq-card-revenue" style={{ cursor: 'pointer', border: '1px solid rgba(204, 255, 0, 0.3)' }} onClick={() => setActiveTab('finance')}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="aq-val text-volt-accent" style={{ fontSize: '2.2rem' }}>
+                        <span className="aq-val text-volt-accent">
                           ₹{(memberPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toLocaleString()}
                         </span>
                         <TrendingUp size={20} className="text-volt-accent" />
@@ -1520,7 +1525,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
                     {/* 3. CRM Leads */}
                     <div className="aq-card" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('crm')}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="aq-val" style={{ fontSize: '2.2rem' }}>{totalEnquiriesCount}</span>
+                        <span className="aq-val">{totalEnquiriesCount}</span>
                         <MessageSquare size={20} color="#38BDF8" />
                       </div>
                       <span className="aq-lbl" style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>Active Leads</span>
@@ -1532,7 +1537,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
                     {/* 4. Floor Attendance */}
                     <div className="aq-card" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('attendance')}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="aq-val" style={{ fontSize: '2.2rem' }}>{todayAttendanceCount}</span>
+                        <span className="aq-val">{todayAttendanceCount}</span>
                         <CheckCircle2 size={20} color="#10B981" />
                       </div>
                       <span className="aq-lbl" style={{ fontSize: '0.86rem', color: '#fff', fontWeight: 700 }}>Today's Check-Ins</span>
@@ -1542,9 +1547,9 @@ export default function AdminDashboard({ isOpen, onClose }) {
                     </div>
 
                     {/* 5. Pending Fee Dues */}
-                    <div className="aq-card" style={{ cursor: 'pointer', border: '1px solid rgba(239, 68, 68, 0.25)' }} onClick={() => setActiveTab('members')}>
+                    <div className="aq-card aq-card-dues" style={{ cursor: 'pointer', border: '1px solid rgba(239, 68, 68, 0.25)' }} onClick={() => setActiveTab('members')}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span className="aq-val" style={{ fontSize: '2.2rem', color: '#F87171' }}>
+                        <span className="aq-val" style={{ color: '#F87171' }}>
                           {members.filter(m => m.status === 'Overdue' || m.status === 'Upcoming').length}
                         </span>
                         <AlertCircle size={20} color="#F87171" />
@@ -1558,7 +1563,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
                   </div>
 
                   {/* Visual Analytics Split: Revenue Trajectory + Lead Funnel */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px', marginBottom: '24px' }}>
+                  <div className="admin-charts-grid">
                     
                     {/* Revenue Growth SVG Chart */}
                     <div style={{ background: '#121622', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '18px 20px' }}>
@@ -1699,17 +1704,11 @@ export default function AdminDashboard({ isOpen, onClose }) {
                   </div>
 
                   {/* QUICK ACTIONS ROW */}
-                  <div style={{ 
-                    background: 'rgba(255, 255, 255, 0.03)', 
-                    border: '1px solid rgba(255, 255, 255, 0.08)', 
-                    borderRadius: '10px', 
-                    padding: '16px 20px', 
-                    marginBottom: '26px' 
-                  }}>
+                  <div className="admin-quick-actions-bar">
                     <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.06em', display: 'block', marginBottom: '10px' }}>
                       QUICK COMMERCIAL ACTIONS
                     </span>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                    <div className="admin-qa-buttons">
                       <button 
                         onClick={() => { setActiveTab('members'); setShowAddMember(true); }}
                         className="btn btn-primary btn-sm"
@@ -2101,7 +2100,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
                   )}
 
                   {/* Wireframe Plan Cards with [Edit] [Delete] */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                  <div className="admin-plans-grid">
                     {plans.map((p) => (
                       <div 
                         key={p.id} 
@@ -3214,7 +3213,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
                     </div>
                   )}
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                  <div className="admin-testimonials-grid">
                     {testimonials.map((t) => (
                       <div key={t.id} style={{ background: '#111520', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '18px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
@@ -3328,7 +3327,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
                     </div>
                   )}
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                  <div className="admin-transformations-grid">
                     {transformations.map((t) => (
                       <div key={t.id} style={{ background: '#111520', borderRadius: '10px', padding: '18px', border: '1px solid rgba(255,255,255,0.08)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
@@ -3415,7 +3414,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
                     </div>
                   )}
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
+                  <div className="admin-gallery-grid">
                     {gallery.map((g) => (
                       <div key={g.id} style={{ background: '#111520', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', position: 'relative' }}>
                         <img src={g.image || g.image_url} alt={g.title} style={{ width: '100%', height: '130px', objectFit: 'cover' }} />
@@ -3614,7 +3613,7 @@ export default function AdminDashboard({ isOpen, onClose }) {
                       </span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px', fontSize: '0.82rem' }}>
+                    <div className="admin-settings-grid">
                       <div>
                         <span style={{ color: '#64748b', display: 'block' }}>Connected Project Endpoint:</span>
                         <code style={{ color: '#e2e8f0', background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px' }}>

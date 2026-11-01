@@ -106,10 +106,10 @@ export default function AttendanceDesk({ members = [], showToast }) {
       </div>
 
       {/* KPI Counters */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+      <div className="attendance-kpi-grid">
         <div className="aq-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="aq-val text-volt-accent" style={{ fontSize: '2.4rem' }}>{activeOnFloorCount}</span>
+            <span className="aq-val text-volt-accent">{activeOnFloorCount}</span>
             <Flame size={24} color="#FF6B00" />
           </div>
           <span className="aq-lbl" style={{ color: '#FFFFFF', fontWeight: 700 }}>Currently On Floor</span>
@@ -120,7 +120,7 @@ export default function AttendanceDesk({ members = [], showToast }) {
 
         <div className="aq-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="aq-val" style={{ fontSize: '2.4rem' }}>{todayLogs.length}</span>
+            <span className="aq-val">{todayLogs.length}</span>
             <UserCheck size={24} color="#38BDF8" />
           </div>
           <span className="aq-lbl" style={{ color: '#FFFFFF', fontWeight: 700 }}>Total Check-Ins Today</span>
@@ -131,18 +131,20 @@ export default function AttendanceDesk({ members = [], showToast }) {
 
         <div className="aq-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="aq-val" style={{ fontSize: '2.4rem' }}>18,000</span>
+            <span className="aq-val" style={{ color: '#A855F7' }}>
+              {activeOnFloorCount > 0 ? `${activeOnFloorCount} / 80` : '0 / 80'}
+            </span>
             <Clock size={24} color="#A855F7" />
           </div>
-          <span className="aq-lbl" style={{ color: '#FFFFFF', fontWeight: 700 }}>Peak Hours Tracking</span>
+          <span className="aq-lbl" style={{ color: '#FFFFFF', fontWeight: 700 }}>Floor Capacity</span>
           <small style={{ color: '#A855F7', fontSize: '0.74rem', marginTop: '4px', display: 'block' }}>
-            Current capacity: Optimal (24%)
+            {activeOnFloorCount > 0 ? `Current capacity: ${Math.round((activeOnFloorCount / 80) * 100)}%` : 'Facility ready for check-ins'}
           </small>
         </div>
       </div>
 
       {/* Check-In Controls: Member Search & QR Simulator */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px', marginBottom: '24px' }}>
+      <div className="attendance-split-grid">
         
         {/* Quick Member Search & Check-in */}
         <div style={{ background: '#121622', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '18px 20px' }}>
